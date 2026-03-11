@@ -1,8 +1,14 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import LoginForm from './pages/Login'
+import Dashboard from './pages/Dashboard'
+
 function App() {
   return (
-    <div className="bg-blue-500 text-white p-4">
-      <h1>BizPilot</h1>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+    </Routes>
   )
 }
 
