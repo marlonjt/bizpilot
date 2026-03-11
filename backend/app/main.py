@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from app.database import engine, Base
 from app.models import user, client
-from app.routers import auth
+from app.routers import auth, clients
+
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -16,4 +17,6 @@ def read_root():
     return {"message": "BizPilot API funcionando", "version": "0.1.0"}
 
 
-app.include_router(router=auth.router)
+# Routers the app
+app.include_router(auth.router)
+app.include_router(clients.router)
