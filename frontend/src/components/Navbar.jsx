@@ -1,4 +1,5 @@
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -8,6 +9,12 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 text-white">
           <h1>Bizpilot</h1>
+          <Link to="/products" className="text-gray-300 hover:text-white">
+            Productos
+          </Link>
+          <Link to="/dashboard" className="text-gray-300 hover:text-white">
+            Clientes
+          </Link>
           <div className="flex items-center gap-4">
             <span className="text-gray-300 first-letter:uppercase">
               {user?.full_name}
