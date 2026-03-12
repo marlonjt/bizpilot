@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
 
 # Importaciones locales de mi app
 from app.database import get_db
@@ -34,16 +35,23 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
+def authenticate_user(email: str, password: str, db: Session) -> User:
+    db_user = db.query(User).filter(User.email == email).first()
+    if not db_user or not verify_password(password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    return db_user
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    # Paso 1: Buscar el usuario por email
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not verify_password(user.password, db_user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    db_user = authenticate_user(user.email, user.password, db)
     access_token = create_access_token(data={"sub": db_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.post("/token")
+def login_swagger(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    db_user = authenticate_user(form_data.username, form_data.password, db)
+    access_token = create_access_token(data={"sub": db_user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):

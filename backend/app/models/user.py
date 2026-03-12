@@ -18,3 +18,4 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )  # Creation timestamp
     clients = relationship("Client", back_populates="owner")
+    products = relationship("Product", back_populates="owner")
