@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
-import ClientModal from "../components/ClientModal"
-
+import ClientModal from "../components/ClientModal";
+import EditClientModal from "../components/EditClientModal";
 
 function Dashboard() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   const fetchClients = async () => {
     try {
@@ -19,6 +20,18 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (clientId) => {
+    const isConfirm = window.confirm("¿Estás seguro?");
+    if (isConfirm) {
+      await api.delete(`/clients/${clientId}`);
+      fetchClients();
+    }
+  };
+
+  const handleEdit = (client) => {
+    setSelectedClient(client); // guarda el cliente seleccionado
   };
 
   useEffect(() => {
@@ -36,6 +49,17 @@ function Dashboard() {
           onSuccess={() => {
             setShowModal(false);
             fetchClients(); // Refrescamos la lista automáticamente
+          }}
+        />
+      )}
+
+      {selectedClient && (
+        <EditClientModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          onSuccess={() => {
+            setSelectedClient(null);
+            fetchClients();
           }}
         />
       )}
@@ -70,9 +94,18 @@ function Dashboard() {
                 >
                   <td className="px-6 py-4">{client.full_name}</td>
                   <td className="px-6 py-4">{client.email}</td>
-                  <td className="px-6 py-4">
-                    <button className="text-indigo-400 hover:text-indigo-300">
+                  <td className="px-6 py-4 flex gap-3">
+                    <button
+                      onClick={() => handleEdit(client)}
+                      className="text-indigo-400 hover:text-indigo-300"
+                    >
                       Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(client.id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      Eliminar
                     </button>
                   </td>
                 </tr>

@@ -1,21 +1,27 @@
 import { useState } from "react";
 import api from "../services/api";
 
-function ClientModal({ onClose, onSuccess }) {
-  const [full_name, setFull_name] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notas, setNotas] = useState("");
+function EditClientModal({ client, onClose, onSuccess }) {
+  // Los estados se inicializan con los datos existentes
+  const [full_name, setFull_name] = useState(client.full_name);
+  const [email, setEmail] = useState(client.email);
+  const [phone, setPhone] = useState(client.phone || "");
+  const [notas, setNotas] = useState(client.notas || "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // 1. Limpiamos errores previos al intentar de nuevo
+    setError("");
     setSaving(true);
 
     try {
-      await api.post("/clients/", { full_name, email, phone, notas });
+      await api.put(`/clients/${client.id}`, {
+        full_name,
+        email,
+        phone,
+        notas,
+      });
       onSuccess();
     } catch (err) {
       setError("Error al crear cliente");
@@ -31,7 +37,7 @@ function ClientModal({ onClose, onSuccess }) {
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
         {/* Header del modal */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-white text-xl font-bold">Nuevo Cliente</h2>
+          <h2 className="text-white text-xl font-bold">Editar Cliente</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors text-xl"
@@ -131,4 +137,4 @@ function ClientModal({ onClose, onSuccess }) {
   );
 }
 
-export default ClientModal;
+export default EditClientModal;
