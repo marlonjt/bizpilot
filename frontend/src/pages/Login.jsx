@@ -1,5 +1,5 @@
-import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function LoginForm() {
@@ -16,16 +16,18 @@ function LoginForm() {
     try {
       await login(email, password);
       navigate("/dashboard");
-    } catch (err) {
-      setError("Credenciales incorrectas");
+    } catch {
+      // Generic message to avoid exposing which field is wrong (security best practice)
+      setError("Invalid email or password");
     }
   };
+
   return (
     <div className="min-h-screen bg-black">
       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
-            alt="Your Company"
+            alt="BizPilot"
             src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
             className="mx-auto h-10 w-auto"
           />
@@ -37,10 +39,11 @@ function LoginForm() {
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400">
-                Error: {error}
+              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400 text-sm">
+                {error}
               </div>
             )}
+
             <div>
               <label
                 htmlFor="email"
@@ -50,6 +53,7 @@ function LoginForm() {
               </label>
               <div className="mt-2">
                 <input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -68,17 +72,10 @@ function LoginForm() {
                 >
                   Password
                 </label>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-indigo-400 hover:text-indigo-300"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
               </div>
               <div className="mt-2">
                 <input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -89,14 +86,12 @@ function LoginForm() {
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Sign in
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            >
+              Sign in
+            </button>
           </form>
 
           <p className="mt-10 text-center text-sm/6 text-gray-400">
@@ -105,7 +100,7 @@ function LoginForm() {
               to="/register"
               className="font-semibold text-indigo-400 hover:text-indigo-300"
             >
-              Register
+              Create an account
             </Link>
           </p>
         </div>

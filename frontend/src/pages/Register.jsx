@@ -1,12 +1,12 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function RegisterForm() {
-  const [full_name, setFull_name] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm_password, setConfirmPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
   const { register } = useAuth();
@@ -16,55 +16,60 @@ function RegisterForm() {
     e.preventDefault();
     setError("");
 
-    if (password !== confirm_password) {
-      return setError("Password different");
+    // Client-side validation before hitting the API
+    if (password !== confirmPassword) {
+      return setError("Passwords do not match");
     }
 
     try {
-      await register(full_name, email, password);
+      await register(fullName, email, password);
       navigate("/login");
-    } catch (err) {
-      setError("Email ya existe");
+    } catch {
+      setError("Email already in use");
     }
   };
+
   return (
     <div className="min-h-screen bg-black">
       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
-            alt="Your Company"
+            alt="BizPilot"
             src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
             className="mx-auto h-10 w-auto"
           />
           <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
-            Register your account
+            Create your account
           </h2>
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400">
-                Error: {error}
+              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400 text-sm">
+                {error}
               </div>
             )}
+
             <div>
               <label
-                htmlFor="full_name"
+                htmlFor="fullName"
                 className="block text-sm/6 font-medium text-gray-100"
               >
-                Full Name
+                Full name
               </label>
               <div className="mt-2">
                 <input
+                  id="fullName"
                   type="text"
-                  value={full_name}
-                  onChange={(e) => setFull_name(e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
                 />
               </div>
             </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -74,6 +79,7 @@ function RegisterForm() {
               </label>
               <div className="mt-2">
                 <input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -85,56 +91,60 @@ function RegisterForm() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm/6 font-medium text-gray-100"
-                >
-                  Password
-                </label>
-              </div>
+              <label
+                htmlFor="password"
+                className="block text-sm/6 font-medium text-gray-100"
+              >
+                Password
+              </label>
               <div className="mt-2">
                 <input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
                   className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm/6 font-medium text-gray-100"
-                >
-                  Confirm Password
-                </label>
-              </div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm/6 font-medium text-gray-100"
+              >
+                Confirm password
+              </label>
               <div className="mt-2">
                 <input
+                  id="confirmPassword"
                   type="password"
-                  value={confirm_password}
+                  value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
                   className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
                 />
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Create account
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            >
+              Create account
+            </button>
           </form>
+
+          <p className="mt-10 text-center text-sm/6 text-gray-400">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-indigo-400 hover:text-indigo-300"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

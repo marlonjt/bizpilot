@@ -1,12 +1,16 @@
 import { useState } from "react";
 import api from "../services/api";
 
+// Modal for editing an existing client.
+// Props:
+//   client   — the client object to edit (pre-fills the form fields)
+//   onClose  — called when user cancels or closes the modal
+//   onSuccess — called after successful update (triggers table refresh)
 function EditClientModal({ client, onClose, onSuccess }) {
-  // Los estados se inicializan con los datos existentes
-  const [full_name, setFull_name] = useState(client.full_name);
+  const [fullName, setFullName] = useState(client.full_name);
   const [email, setEmail] = useState(client.email);
   const [phone, setPhone] = useState(client.phone || "");
-  const [notas, setNotas] = useState(client.notas || "");
+  const [notes, setNotes] = useState(client.notes || "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -17,103 +21,89 @@ function EditClientModal({ client, onClose, onSuccess }) {
 
     try {
       await api.put(`/clients/${client.id}`, {
-        full_name,
+        full_name: fullName,
         email,
         phone,
-        notas,
+        notes,
       });
       onSuccess();
-    } catch (err) {
-      setError("Error al crear cliente");
+    } catch {
+      setError("Failed to update client. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    // Backdrop (Fondo oscuro transparente)
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      {/* Contenedor principal del modal */}
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
-        {/* Header del modal */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-white text-xl font-bold">Editar Cliente</h2>
+          <h2 className="text-white text-xl font-bold">Edit Client</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors text-xl"
-            title="Cerrar"
           >
             ✕
           </button>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Campo Nombre */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Nombre Completo
+              Full name
             </label>
             <input
               type="text"
-              value={full_name}
-              onChange={(e) => setFull_name(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               required
-              placeholder="Ej. Juan Pérez"
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
-          {/* Campo Email */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Correo Electrónico
+              Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="ejemplo@empresa.com"
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
-          {/* Campo Teléfono */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Teléfono
+              Phone
             </label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+52 123 456 7890"
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Notas
+              Notes
             </label>
             <input
               type="text"
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Ingresa alguna nota"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
-          {/* Mensaje de Error */}
           {error && (
             <div className="rounded-md bg-red-500/10 p-3 border border-red-500/50">
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
 
-          {/* Botones de Acción */}
           <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-700">
             <button
               type="button"
@@ -121,14 +111,14 @@ function EditClientModal({ client, onClose, onSuccess }) {
               disabled={saving}
               className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center"
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
             >
-              {saving ? "Guardando..." : "Guardar Cliente"}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
