@@ -11,7 +11,7 @@ class Client(Base):
     full_name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, nullable=True)
-    notes = Column(String, nullable=True)  # renamed from 'notas' to 'notes' (English)
+    notes = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

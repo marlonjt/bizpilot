@@ -17,3 +17,4 @@ class User(Base):
     # One user can have many clients and products
     clients = relationship("Client", back_populates="owner")
     products = relationship("Product", back_populates="owner")
+    sales = relationship("Sale", back_populates="owner")
