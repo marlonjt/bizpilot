@@ -29,6 +29,12 @@ function Navbar() {
             >
               Products
             </Link>
+            <Link
+              to="/sales"
+              className="text-gray-300 hover:text-white text-sm transition-colors"
+            >
+              Sales
+            </Link>
           </div>
 
           {/* Right: user name + logout button */}
