@@ -16,9 +16,14 @@ function Navbar() {
         <div className="flex justify-between items-center h-16 text-white">
           {/* Left: brand + navigation links */}
           <div className="flex items-center gap-6">
-            <h1 className="font-bold text-lg">BizPilot</h1>
             <Link
               to="/dashboard"
+              className="font-bold text-lg hover:text-indigo-400 transition-colors"
+            >
+              BizPilot
+            </Link>
+            <Link
+              to="/clients"
               className="text-gray-300 hover:text-white text-sm transition-colors"
             >
               Clients

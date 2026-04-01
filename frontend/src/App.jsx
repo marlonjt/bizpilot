@@ -4,8 +4,8 @@ import RegisterForm from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Sales from "./pages/Sales";
+import Clients from "./pages/Clients";
 import ProtectedRoute from "./components/ProtectedRoute";
-
 
 function App() {
   return (
@@ -18,6 +18,7 @@ function App() {
       {/* Protected routes — ProtectedRoute checks auth for all children */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/clients" element={<Clients />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sales" element={<Sales />} />
       </Route>
