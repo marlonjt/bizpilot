@@ -9,10 +9,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar el resto de la app
-COPY . .
-
-# Exponer el puerto de FastAPI
-EXPOSE 8000
-
-# Comando para iniciar la app con uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+COPY start.sh .
+RUN chmod +x start.sh
+CMD ["./start.sh"]
