@@ -26,11 +26,10 @@ function LoginForm() {
     <div className="min-h-screen bg-black">
       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <img
-            alt="BizPilot"
-            src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-            className="mx-auto h-10 w-auto"
-          />
+          <div className="mx-auto w-fit">
+            <span className="text-3xl font-black text-indigo-500">Biz</span>
+            <span className="text-3xl font-black text-white">Pilot</span>
+          </div>
           <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
             Sign in to your account
           </h2>
