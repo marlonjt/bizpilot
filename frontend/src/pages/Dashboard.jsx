@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
+import RevenueChart from "../components/RevenueChart";
 
 function Dashboard() {
   // ── STATE ─────────────────────────────────────────────────────────
@@ -40,17 +41,18 @@ function Dashboard() {
   // Sales today — filter by comparing date strings
   const today = new Date().toDateString();
   const salesToday = sales.filter(
-    (s) => new Date(s.created_at).toDateString() === today
+    (s) => new Date(s.created_at).toDateString() === today,
   ).length;
 
   // Top selling product — counts total quantity sold per product_id
   // Result: { "1": 5, "2": 12 } → finds the key with the highest value
   const productSalesMap = {};
   sales.forEach((s) => {
-    productSalesMap[s.product_id] = (productSalesMap[s.product_id] || 0) + s.quantity;
+    productSalesMap[s.product_id] =
+      (productSalesMap[s.product_id] || 0) + s.quantity;
   });
   const topProductId = Object.keys(productSalesMap).sort(
-    (a, b) => productSalesMap[b] - productSalesMap[a]
+    (a, b) => productSalesMap[b] - productSalesMap[a],
   )[0];
   const topProduct = products.find((p) => p.id === Number(topProductId));
 
@@ -85,13 +87,13 @@ function Dashboard() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-
         {/* ── LOW STOCK ALERT ──────────────────────────────────────── */}
         {/* Conditionally rendered — only visible when stock is low */}
         {lowStockProducts.length > 0 && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
             <p className="text-red-400 font-semibold mb-2">
-              ⚠️ Low stock alert — {lowStockProducts.length} product{lowStockProducts.length > 1 ? "s" : ""} need restocking
+              ⚠️ Low stock alert — {lowStockProducts.length} product
+              {lowStockProducts.length > 1 ? "s" : ""} need restocking
             </p>
             <div className="flex flex-wrap gap-3">
               {lowStockProducts.map((p) => (
@@ -109,15 +111,25 @@ function Dashboard() {
         {/* ── ROW 1: CORE METRICS ──────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Total Clients</p>
-            <p className="text-4xl font-bold text-white mt-2">{clients.length}</p>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Total Clients
+            </p>
+            <p className="text-4xl font-bold text-white mt-2">
+              {clients.length}
+            </p>
           </div>
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Total Products</p>
-            <p className="text-4xl font-bold text-white mt-2">{products.length}</p>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Total Products
+            </p>
+            <p className="text-4xl font-bold text-white mt-2">
+              {products.length}
+            </p>
           </div>
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Total Revenue</p>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Total Revenue
+            </p>
             <p className="text-4xl font-bold text-green-400 mt-2">
               ${totalRevenue.toFixed(2)}
             </p>
@@ -127,16 +139,26 @@ function Dashboard() {
         {/* ── ROW 2: ACTIVITY METRICS ──────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Sales Today</p>
-            <p className="text-4xl font-bold text-indigo-400 mt-2">{salesToday}</p>
-            <p className="text-gray-500 text-xs mt-2">transactions registered today</p>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Sales Today
+            </p>
+            <p className="text-4xl font-bold text-indigo-400 mt-2">
+              {salesToday}
+            </p>
+            <p className="text-gray-500 text-xs mt-2">
+              transactions registered today
+            </p>
           </div>
 
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Top Product</p>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Top Product
+            </p>
             {topProduct ? (
               <>
-                <p className="text-2xl font-bold text-white mt-2">{topProduct.name}</p>
+                <p className="text-2xl font-bold text-white mt-2">
+                  {topProduct.name}
+                </p>
                 <p className="text-gray-500 text-xs mt-2">
                   {productSalesMap[topProductId]} units sold total
                 </p>
@@ -147,10 +169,14 @@ function Dashboard() {
           </div>
 
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm uppercase tracking-wide">Low Stock</p>
-            <p className={`text-4xl font-bold mt-2 ${
-              lowStockProducts.length > 0 ? "text-red-400" : "text-green-400"
-            }`}>
+            <p className="text-gray-400 text-sm uppercase tracking-wide">
+              Low Stock
+            </p>
+            <p
+              className={`text-4xl font-bold mt-2 ${
+                lowStockProducts.length > 0 ? "text-red-400" : "text-green-400"
+              }`}
+            >
               {lowStockProducts.length}
             </p>
             <p className="text-gray-500 text-xs mt-2">
@@ -180,11 +206,20 @@ function Dashboard() {
               </thead>
               <tbody className="divide-y divide-gray-700">
                 {recentSales.map((sale) => (
-                  <tr key={sale.id} className="text-gray-300 hover:bg-gray-700/50">
-                    <td className="px-6 py-4">{getClientName(sale.client_id)}</td>
-                    <td className="px-6 py-4">{getProductName(sale.product_id)}</td>
+                  <tr
+                    key={sale.id}
+                    className="text-gray-300 hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4">
+                      {getClientName(sale.client_id)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {getProductName(sale.product_id)}
+                    </td>
                     <td className="px-6 py-4">{sale.quantity}</td>
-                    <td className="px-6 py-4">${Number(sale.unit_price).toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      ${Number(sale.unit_price).toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 text-green-400 font-medium">
                       ${Number(sale.total).toFixed(2)}
                     </td>
@@ -197,7 +232,7 @@ function Dashboard() {
             )}
           </div>
         </div>
-
+        <RevenueChart sales={sales} />
       </div>
     </div>
   );
