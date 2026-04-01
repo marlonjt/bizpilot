@@ -9,6 +9,7 @@ function Clients() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchClients = async () => {
     try {
@@ -31,13 +32,20 @@ function Clients() {
     }
   };
 
-  const handleEdit = (client) => {
-    setSelectedClient(client);
-  };
-
   useEffect(() => {
     fetchClients();
   }, []);
+
+  // Filter runs locally — no extra API calls
+  // Searches name, email and phone simultaneously, case-insensitive
+  const filteredClients = clients.filter((client) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      client.full_name.toLowerCase().includes(query) ||
+      client.email.toLowerCase().includes(query) ||
+      (client.phone && client.phone.toLowerCase().includes(query))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -52,7 +60,6 @@ function Clients() {
           }}
         />
       )}
-
       {selectedClient && (
         <EditClientModal
           client={selectedClient}
@@ -65,14 +72,28 @@ function Clients() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-white text-xl font-bold">Clients</h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            + New Client
-          </button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h2 className="text-white text-xl font-bold">
+            Clients
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              {filteredClients.length} of {clients.length}
+            </span>
+          </h2>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search by name, email or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              + New Client
+            </button>
+          </div>
         </div>
 
         <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
@@ -87,18 +108,18 @@ function Clients() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <tr
                   key={client.id}
                   className="text-gray-300 hover:bg-gray-700/50"
                 >
-                  <td className="px-6 py-4 capitalize">{client.full_name}</td>
+                  <td className="px-6 py-4">{client.full_name}</td>
                   <td className="px-6 py-4">{client.email}</td>
                   <td className="px-6 py-4">{client.phone || "—"}</td>
-                  <td className="px-6 py-4 capitalize">{client.notes || "—"}</td>
+                  <td className="px-6 py-4">{client.notes || "—"}</td>
                   <td className="px-6 py-4 flex gap-3">
                     <button
-                      onClick={() => handleEdit(client)}
+                      onClick={() => setSelectedClient(client)}
                       className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors"
                     >
                       Edit
@@ -114,10 +135,11 @@ function Clients() {
               ))}
             </tbody>
           </table>
-
-          {clients.length === 0 && !loading && (
+          {filteredClients.length === 0 && !loading && (
             <p className="text-gray-500 text-center py-10">
-              No clients registered yet.
+              {searchQuery
+                ? `No clients found for "${searchQuery}"`
+                : "No clients registered yet."}
             </p>
           )}
         </div>

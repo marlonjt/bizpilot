@@ -8,10 +8,9 @@ function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null); // null = no modal, object = edit modal
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetches all products from the API and updates local state.
-  // Called on mount and after any create/edit/delete operation.
   const fetchProducts = async () => {
     try {
       const response = await api.get("/products/");
@@ -33,19 +32,23 @@ function Products() {
     }
   };
 
-  const handleEdit = (product) => {
-    setSelectedProduct(product); // Opens the edit modal with this product's data
-  };
-
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Searches name and description simultaneously, case-insensitive
+  const filteredProducts = products.filter((product) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(query) ||
+      (product.description && product.description.toLowerCase().includes(query))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-gray-950">
       <Navbar />
 
-      {/* Create modal — only mounted when showCreateModal is true */}
       {showCreateModal && (
         <ProductModal
           onClose={() => setShowCreateModal(false)}
@@ -55,8 +58,6 @@ function Products() {
           }}
         />
       )}
-
-      {/* Edit modal — only mounted when a product is selected */}
       {selectedProduct && (
         <EditProductModal
           product={selectedProduct}
@@ -69,40 +70,61 @@ function Products() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-white text-xl font-bold">Products</h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            + New Product
-          </button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h2 className="text-white text-xl font-bold">
+            Products
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              {filteredProducts.length} of {products.length}
+            </span>
+          </h2>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search by name or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              + New Product
+            </button>
+          </div>
         </div>
 
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
           <table className="w-full text-left">
             <thead className="text-gray-400 border-b border-gray-700 text-sm uppercase">
               <tr>
                 <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Description</th>
                 <th className="px-6 py-4">Price</th>
                 <th className="px-6 py-4">Stock</th>
                 <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr
                   key={product.id}
                   className="text-gray-300 hover:bg-gray-700/50"
                 >
-                  <td className="px-6 py-4 capitalize">{product.name}</td>
+                  <td className="px-6 py-4">{product.name}</td>
+                  <td className="px-6 py-4">{product.description || "—"}</td>
                   <td className="px-6 py-4">
                     ${Number(product.price).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4">{product.stock}</td>
+                  {/* Stock shown in red when low (less than 5) */}
+                  <td
+                    className={`px-6 py-4 font-medium ${product.stock < 5 ? "text-red-400" : "text-gray-300"}`}
+                  >
+                    {product.stock} {product.stock < 5 && "⚠️"}
+                  </td>
                   <td className="px-6 py-4 flex gap-3">
                     <button
-                      onClick={() => handleEdit(product)}
+                      onClick={() => setSelectedProduct(product)}
                       className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors"
                     >
                       Edit
@@ -118,10 +140,11 @@ function Products() {
               ))}
             </tbody>
           </table>
-
-          {products.length === 0 && !loading && (
+          {filteredProducts.length === 0 && !loading && (
             <p className="text-gray-500 text-center py-10">
-              No products registered yet.
+              {searchQuery
+                ? `No products found for "${searchQuery}"`
+                : "No products registered yet."}
             </p>
           )}
         </div>
