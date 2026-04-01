@@ -44,7 +44,7 @@ function Navbar() {
 
           {/* Right: user name + logout button */}
           <div className="flex items-center gap-4">
-            <span className="text-gray-300 text-sm">{user?.full_name}</span>
+            <span className="text-gray-300 text-sm capitalize">{user?.full_name}</span>
             <button
               onClick={handleLogout}
               className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-sm transition-colors"

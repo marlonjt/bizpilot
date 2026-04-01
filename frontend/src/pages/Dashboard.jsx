@@ -109,6 +109,10 @@ function Dashboard() {
         )}
 
         {/* ── ROW 1: CORE METRICS ──────────────────────────────────── */}
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-white text-lg font-bold">All sales system</h3>
+          <span className="text-gray-500 text-sm">{sales.length} total</span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <p className="text-gray-400 text-sm uppercase tracking-wide">
@@ -117,6 +121,7 @@ function Dashboard() {
             <p className="text-4xl font-bold text-white mt-2">
               {clients.length}
             </p>
+            <p className="text-gray-500 text-xs mt-2">all customer system</p>
           </div>
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <p className="text-gray-400 text-sm uppercase tracking-wide">
@@ -125,6 +130,7 @@ function Dashboard() {
             <p className="text-4xl font-bold text-white mt-2">
               {products.length}
             </p>
+            <p className="text-gray-500 text-xs mt-2">all products system</p>
           </div>
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <p className="text-gray-400 text-sm uppercase tracking-wide">
@@ -133,10 +139,15 @@ function Dashboard() {
             <p className="text-4xl font-bold text-green-400 mt-2">
               ${totalRevenue.toFixed(2)}
             </p>
+            <p className="text-gray-500 text-xs mt-2">all sales system</p>
           </div>
         </div>
 
         {/* ── ROW 2: ACTIVITY METRICS ──────────────────────────────── */}
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-white text-lg font-bold">Today's sales</h3>
+          <span className="text-gray-500 text-sm">{salesToday} total</span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <p className="text-gray-400 text-sm uppercase tracking-wide">
@@ -231,6 +242,9 @@ function Dashboard() {
               <p className="text-gray-500 text-center py-8">No sales yet.</p>
             )}
           </div>
+        </div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-white text-lg font-bold">Monthly sales chart </h3>
         </div>
         <RevenueChart sales={sales} />
       </div>

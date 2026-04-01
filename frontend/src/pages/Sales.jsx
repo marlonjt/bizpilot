@@ -81,7 +81,7 @@ function Sales() {
       {selectedSale && (
         <EditSaleModal
           sale={selectedSale} // pass the full object so the modal can pre-fill fields
-          clients={clients} 
+          clients={clients}
           products={products}
           onClose={() => setSelectedSale(null)}
           onSuccess={() => {
@@ -121,8 +121,10 @@ function Sales() {
                   className="text-gray-300 hover:bg-gray-700/50"
                 >
                   {/* For now shows IDs — later we can show names using relationships */}
-                  <td className="px-6 py-4">{getClientName(sale.client_id)}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 capitalize">
+                    {getClientName(sale.client_id)}
+                  </td>
+                  <td className="px-6 py-4 capitalize">
                     {getProductName(sale.product_id)}
                   </td>
                   <td className="px-6 py-4">{sale.quantity}</td>

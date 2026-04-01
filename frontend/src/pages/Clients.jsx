@@ -92,10 +92,10 @@ function Clients() {
                   key={client.id}
                   className="text-gray-300 hover:bg-gray-700/50"
                 >
-                  <td className="px-6 py-4">{client.full_name}</td>
+                  <td className="px-6 py-4 capitalize">{client.full_name}</td>
                   <td className="px-6 py-4">{client.email}</td>
                   <td className="px-6 py-4">{client.phone || "—"}</td>
-                  <td className="px-6 py-4">{client.notes || "—"}</td>
+                  <td className="px-6 py-4 capitalize">{client.notes || "—"}</td>
                   <td className="px-6 py-4 flex gap-3">
                     <button
                       onClick={() => handleEdit(client)}

@@ -40,26 +40,15 @@ function RevenueChart({ sales }) {
 
   // 4. Construye el objeto data
   const data = {
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Sep",
-      "Oct",
-      "Dec",
-    ],
+    labels: months,
     datasets: [
       {
-        label: "Revenue",
-        data: [100, 250, 180, 90, 68, 100, 85, 70, 120, 255],
+        label: "Revenue ($)",
+        data: revenues,
         borderColor: "#6366f1",
-        backgroundColor: "#6366f1",
-        tension: 0.4, // curva suave en la línea
+        backgroundColor: "rgba(99, 102, 241, 0.1)", // transparente para el área
+        tension: 0.4,
+        fill: true, // rellena el área bajo la línea
       },
     ],
   };
@@ -76,10 +65,44 @@ function RevenueChart({ sales }) {
     },
   };
 
+  // Cuenta cuántas ventas hubo por mes (no el total en dinero)
+  const salesCountByMonth = {};
+  sales.forEach((sale) => {
+    const month = new Date(sale.created_at).toISOString().slice(0, 7);
+    salesCountByMonth[month] = (salesCountByMonth[month] || 0) + 1;
+  });
+
+  const salesMonths = Object.keys(salesCountByMonth).sort();
+  const salesCounts = salesMonths.map((m) => salesCountByMonth[m]);
+
+  const barData = {
+    labels: salesMonths,
+    datasets: [
+      {
+        label: "Number of Sales",
+        data: salesCounts,
+        backgroundColor: "rgba(16, 185, 129, 0.7)", // verde
+        borderRadius: 4,
+      },
+    ],
+  };
+  if (months.length === 0) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 col-span-2">
+        <p className="text-gray-500 text-center py-8">No sales data yet.</p>
+      </div>
+    );
+  }
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <h3 className="text-white font-bold mb-4">Revenue by Month</h3>
-      <Line data={data} options={options} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h3 className="text-white font-bold mb-4">Revenue by Month</h3>
+        <Line data={data} options={options} />
+      </div>
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h3 className="text-white font-bold mb-4">Sales by Month</h3>
+        <Bar data={barData} options={options} />
+      </div>
     </div>
   );
 }

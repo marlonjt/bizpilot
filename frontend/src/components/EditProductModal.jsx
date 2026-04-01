@@ -64,6 +64,7 @@ function EditProductModal({ product, onClose, onSuccess }) {
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description"
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>

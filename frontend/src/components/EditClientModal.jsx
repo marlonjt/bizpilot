@@ -94,6 +94,7 @@ function EditClientModal({ client, onClose, onSuccess }) {
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional notes"
               className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>

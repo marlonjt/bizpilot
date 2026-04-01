@@ -95,7 +95,7 @@ function Products() {
                   key={product.id}
                   className="text-gray-300 hover:bg-gray-700/50"
                 >
-                  <td className="px-6 py-4">{product.name}</td>
+                  <td className="px-6 py-4 capitalize">{product.name}</td>
                   <td className="px-6 py-4">
                     ${Number(product.price).toFixed(2)}
                   </td>
