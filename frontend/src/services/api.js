@@ -3,7 +3,7 @@ import axios from "axios";
 // Central axios instance — all API calls go through here.
 // baseURL is set once so individual requests only need the path (e.g. "/clients/").
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000",
   headers: { "Content-Type": "application/json" },
 });
 
