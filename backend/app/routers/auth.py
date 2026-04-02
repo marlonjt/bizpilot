@@ -6,7 +6,12 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.core.security import hash_password, create_access_token, verify_password
-from app.core.security import get_current_user
+from app.core.security import (
+    get_current_user,
+    create_refresh_token,
+    decode_access_token,
+)
+from app.schemas.user import RefreshTokenRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -45,13 +50,32 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    """
-    JSON login endpoint used by the React frontend (axios).
-    Accepts: { email, password }
-    """
     db_user = authenticate_user(user.email, user.password, db)
     access_token = create_access_token(data={"sub": db_user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": db_user.email})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/refresh")
+def refresh(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+    try:
+        payload = decode_access_token(request.refresh_token)
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        email = payload.get("sub")
+        db_user = db.query(User).filter(User.email == email).first()
+        if not db_user:
+            raise HTTPException(status_code=401, detail="User not found")
+        new_access_token = create_access_token(data={"sub": email})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 
 @router.post("/token")

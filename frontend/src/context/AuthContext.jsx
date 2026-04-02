@@ -38,11 +38,10 @@ export function AuthProvider({ children }) {
   // Authenticates the user, stores the token, and fetches their profile.
   const login = async (email, password) => {
     const response = await api.post("/auth/login", { email, password });
-    const { access_token } = response.data;
-
+    const { access_token, refresh_token } = response.data;
     localStorage.setItem("token", access_token);
+    localStorage.setItem("refresh_token", refresh_token);
     setToken(access_token);
-
     const userResponse = await api.get("/auth/me");
     setUser(userResponse.data);
   };
@@ -50,6 +49,7 @@ export function AuthProvider({ children }) {
   // Clears all auth state and removes the token from storage.
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
     setToken(null);
     setUser(null);
   };
