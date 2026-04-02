@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-
+from typing import Optional
 
 class UserCreate(BaseModel):
     """Data required to register a new user."""
@@ -36,3 +36,9 @@ class TokenResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+class UserUpdate(BaseModel):
+    """Data allowed to be updated in the profile."""
+
+    full_name: Optional[str] = None
+    password: Optional[str] = None

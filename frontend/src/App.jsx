@@ -6,6 +6,7 @@ import Products from "./pages/Products";
 import Sales from "./pages/Sales";
 import Clients from "./pages/Clients";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Profile from "./components/Profile";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/clients" element={<Clients />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sales" element={<Sales />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
     </Routes>
   );

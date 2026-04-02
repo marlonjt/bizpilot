@@ -21,11 +21,18 @@ function SaleModal({ onClose, onSuccess }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    // Fetch both lists in parallel — no need to wait for one before the other
-    api.get("/clients/").then((r) => setClients(r.data));
-    api.get("/products/").then((r) => setProducts(r.data));
-  }, []); // [] means: run once when the component mounts
+    // Añadimos limit: 1000 para traer todos a los selectores
+    // Y usamos r.data.items porque tu API devuelve { items: [], total: X }
+    api
+      .get("/clients/", { params: { limit: 1000 } })
+      .then((r) => setClients(r.data.items || []))
+      .catch((err) => console.error("Error cargando clientes", err));
 
+    api
+      .get("/products/", { params: { limit: 1000 } })
+      .then((r) => setProducts(r.data.items || []))
+      .catch((err) => console.error("Error cargando productos", err));
+  }, []);
   // ── SUBMIT ───────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevents the browser from reloading the page

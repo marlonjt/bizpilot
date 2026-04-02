@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 import ProductModal from "../components/ProductModal";
 import EditProductModal from "../components/EditProductModal";
+import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 10;
 
@@ -57,6 +58,24 @@ function Products() {
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo = Math.min(page * PAGE_SIZE, total);
 
+  const exportToExcel = () => {
+    // Prepara los datos — solo los campos que quieres exportar
+    const data = products.map((p) => ({
+      Name: p.name,
+      description: p.description || "",
+      Price: p.price,
+      Stock: p.stock,
+    }));
+
+    // Crea la hoja y el libro
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients");
+
+    // Descarga el archivo
+    XLSX.writeFile(workbook, "products.xlsx");
+  };
+
   return (
     <div className="min-h-screen bg-gray-950">
       <Navbar />
@@ -64,14 +83,20 @@ function Products() {
       {showCreateModal && (
         <ProductModal
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => { setShowCreateModal(false); fetchProducts(); }}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            fetchProducts();
+          }}
         />
       )}
       {selectedProduct && (
         <EditProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onSuccess={() => { setSelectedProduct(null); fetchProducts(); }}
+          onSuccess={() => {
+            setSelectedProduct(null);
+            fetchProducts();
+          }}
         />
       )}
 
@@ -79,7 +104,9 @@ function Products() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-white text-xl font-bold">
             Products
-            <span className="ml-2 text-sm font-normal text-gray-400">{total} total</span>
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              {total} total
+            </span>
           </h2>
           <div className="flex gap-3 w-full sm:w-auto">
             <input
@@ -95,6 +122,12 @@ function Products() {
             >
               + New Product
             </button>
+            <button
+              onClick={exportToExcel}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              ↓ Export Xlsx
+            </button>
           </div>
         </div>
 
@@ -105,20 +138,39 @@ function Products() {
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Price</th>
                 <th className="px-6 py-4">Stock</th>
+                <th className="px-6 py-4">Description</th>
                 <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="text-gray-300 hover:bg-gray-700/50">
+                <tr
+                  key={product.id}
+                  className="text-gray-300 hover:bg-gray-700/50"
+                >
                   <td className="px-6 py-4">{product.name}</td>
-                  <td className="px-6 py-4">${Number(product.price).toFixed(2)}</td>
-                  <td className={`px-6 py-4 ${product.stock < 5 ? "text-red-400 font-bold" : ""}`}>
+                  <td className="px-6 py-4">
+                    ${Number(product.price).toFixed(2)}
+                  </td>
+                  <td
+                    className={`px-6 py-4 ${product.stock < 5 ? "text-red-400 font-bold" : ""}`}
+                  >
                     {product.stock} {product.stock < 5 && "⚠️"}
                   </td>
+                  <td className="px-6 py-4">{product.description || "—"}</td>
                   <td className="px-6 py-4 flex gap-3">
-                    <button onClick={() => setSelectedProduct(product)} className="text-indigo-400 hover:text-indigo-300 text-sm">Edit</button>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-400 hover:text-red-300 text-sm">Delete</button>
+                    <button
+                      onClick={() => setSelectedProduct(product)}
+                      className="text-indigo-400 hover:text-indigo-300 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -127,13 +179,35 @@ function Products() {
 
           {totalPages > 1 && (
             <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700 bg-gray-800/50">
-              <p className="text-gray-400 text-sm">Showing {showingFrom}–{showingTo} of {total}</p>
+              <p className="text-gray-400 text-sm">
+                Showing {showingFrom}–{showingTo} of {total}
+              </p>
               <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1} className="px-3 py-1 rounded bg-gray-700 text-gray-300 disabled:opacity-40">← Prev</button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button key={p} onClick={() => setPage(p)} className={`px-3 py-1 rounded ${p === page ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300"}`}>{p}</button>
-                ))}
-                <button onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages} className="px-3 py-1 rounded bg-gray-700 text-gray-300 disabled:opacity-40">Next →</button>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 rounded bg-gray-700 text-gray-300 disabled:opacity-40"
+                >
+                  ← Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`px-3 py-1 rounded ${p === page ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300"}`}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 rounded bg-gray-700 text-gray-300 disabled:opacity-40"
+                >
+                  Next →
+                </button>
               </div>
             </div>
           )}

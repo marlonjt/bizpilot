@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 import SaleModal from "../components/SaleModal";
 import EditSaleModal from "../components/EditSaleModal";
+import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 10;
 
@@ -75,6 +76,26 @@ function Sales() {
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo = Math.min(page * PAGE_SIZE, total);
 
+  const exportToExcel = () => {
+    // Prepara los datos — solo los campos que quieres exportar
+    const data = sales.map((s) => ({
+      Cliente: getClientName(s.client_id),
+      Producto: getProductName(s.product_id),
+      UnitPrice: s.unit_price,
+      Quantity: s.quantity,
+      Total: s.total,
+      Notes: s.notes || "",
+    }));
+
+    // Crea la hoja y el libro
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+
+    // Descarga el archivo
+    XLSX.writeFile(workbook, "sales.xlsx");
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar />
@@ -123,6 +144,13 @@ function Sales() {
             >
               + New Sale
             </button>
+            <button
+              onClick={exportToExcel}
+              disabled={loading || sales.length === 0}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              ↓ Export Xlsx
+            </button>
           </div>
         </div>
 
@@ -132,6 +160,7 @@ function Sales() {
               <tr>
                 <th className="px-6 py-4">Client</th>
                 <th className="px-6 py-4">Product</th>
+                <th className="px-6 py-4">Notes</th>
                 <th className="px-6 py-4">Qty</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4">Actions</th>
@@ -147,6 +176,7 @@ function Sales() {
                   <td className="px-6 py-4">
                     {getProductName(sale.product_id)}
                   </td>
+                  <td className="px-6 py-4">{sale.notes || "—"}</td>
                   <td className="px-6 py-4">{sale.quantity}</td>
                   <td className="px-6 py-4 text-green-400 font-medium">
                     ${Number(sale.total).toFixed(2)}

@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, UserLogin
+from app.schemas.user import UserCreate, UserResponse, UserLogin, UserUpdate
 from app.core.security import hash_password, create_access_token, verify_password
 from app.core.security import (
     get_current_user,
@@ -96,4 +96,26 @@ def login_swagger(
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Returns the profile of the currently authenticated user."""
+    return current_user
+
+@router.put("/profile", response_model=UserResponse)
+def update_profile(
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),  # Protege la ruta
+):
+    """Updates the name or password of the authenticated user."""
+
+    # Si el usuario envió un nuevo nombre, lo actualizamos
+    if user_data.full_name:
+        current_user.full_name = user_data.full_name
+
+    # Si envió una contraseña, la hash antes de guardarla
+    if user_data.password and len(user_data.password) >= 6:
+        current_user.hashed_password = hash_password(user_data.password)
+
+    db.add(current_user)
+    db.commit()  # Guarda los cambios en la base de datos
+    db.refresh(current_user)  # Recarga el objeto con los datos nuevos
+
     return current_user
