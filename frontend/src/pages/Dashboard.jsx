@@ -4,26 +4,25 @@ import api from "../services/api";
 import RevenueChart from "../components/RevenueChart";
 
 function Dashboard() {
-  // ── STATE ─────────────────────────────────────────────────────────
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ── DATA FETCHING ─────────────────────────────────────────────────
-  // Promise.all fetches all three endpoints in parallel instead of sequentially
-  // This is faster: waits for ALL to finish instead of one by one
   useEffect(() => {
     const fetchAll = async () => {
       try {
+        // limit:100 fetches enough data for dashboard calculations
+        // Dashboard needs ALL records for metrics, not just one page
         const [clientsRes, productsRes, salesRes] = await Promise.all([
-          api.get("/clients/"),
-          api.get("/products/"),
-          api.get("/sales/"),
+          api.get("/clients/", { params: { skip: 0, limit: 100 } }),
+          api.get("/products/", { params: { skip: 0, limit: 100 } }),
+          api.get("/sales/", { params: { skip: 0, limit: 100 } }),
         ]);
-        setClients(clientsRes.data);
-        setProducts(productsRes.data);
-        setSales(salesRes.data);
+        // All three endpoints now return { total, items } — extract .items
+        setClients(clientsRes.data.items);
+        setProducts(productsRes.data.items);
+        setSales(salesRes.data.items);
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
       } finally {
@@ -34,18 +33,13 @@ function Dashboard() {
   }, []);
 
   // ── CALCULATIONS ──────────────────────────────────────────────────
-
-  // Total revenue — sum of all sale totals
   const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total), 0);
 
-  // Sales today — filter by comparing date strings
   const today = new Date().toDateString();
   const salesToday = sales.filter(
     (s) => new Date(s.created_at).toDateString() === today,
   ).length;
 
-  // Top selling product — counts total quantity sold per product_id
-  // Result: { "1": 5, "2": 12 } → finds the key with the highest value
   const productSalesMap = {};
   sales.forEach((s) => {
     productSalesMap[s.product_id] =
@@ -56,13 +50,9 @@ function Dashboard() {
   )[0];
   const topProduct = products.find((p) => p.id === Number(topProductId));
 
-  // Low stock — products with less than 5 units
   const lowStockProducts = products.filter((p) => p.stock < 5);
-
-  // Recent sales — last 5 sorted by newest ID first
   const recentSales = [...sales].sort((a, b) => b.id - a.id).slice(0, 5);
 
-  // Resolve IDs to names for the recent sales table
   const getClientName = (clientId) => {
     const client = clients.find((c) => c.id === clientId);
     return client ? client.full_name : "—";
@@ -72,7 +62,6 @@ function Dashboard() {
     return product ? product.name : "—";
   };
 
-  // ── LOADING STATE ─────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -81,14 +70,11 @@ function Dashboard() {
     );
   }
 
-  // ── RENDER ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-950">
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* ── LOW STOCK ALERT ──────────────────────────────────────── */}
-        {/* Conditionally rendered — only visible when stock is low */}
+        {/* LOW STOCK ALERT */}
         {lowStockProducts.length > 0 && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
             <p className="text-red-400 font-semibold mb-2">
@@ -108,7 +94,7 @@ function Dashboard() {
           </div>
         )}
 
-        {/* ── ROW 1: CORE METRICS ──────────────────────────────────── */}
+        {/* ROW 1: CORE METRICS */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-white text-lg font-bold">All sales system</h3>
           <span className="text-gray-500 text-sm">{sales.length} total</span>
@@ -143,7 +129,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* ── ROW 2: ACTIVITY METRICS ──────────────────────────────── */}
+        {/* ROW 2: ACTIVITY METRICS */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-white text-lg font-bold">Today's sales</h3>
           <span className="text-gray-500 text-sm">{salesToday} total</span>
@@ -198,7 +184,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* ── RECENT SALES ─────────────────────────────────────────── */}
+        {/* RECENT SALES */}
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-white text-lg font-bold">Recent Sales</h3>
@@ -243,6 +229,7 @@ function Dashboard() {
             )}
           </div>
         </div>
+        {/* CHARTS */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-white text-lg font-bold">Monthly sales chart </h3>
         </div>

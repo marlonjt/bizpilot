@@ -7,22 +7,19 @@ from app.database import get_db
 from app.core.security import get_current_user
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
+from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductListResponse
 
-# All routes in this router will be prefixed with /products
 router = APIRouter(prefix="/products", tags=["products"])
 
 
 def get_product_or_404(
-    product_id: int = Path(...),  # Path(...) tells FastAPI to extract this from the URL
+    product_id: int = Path(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Product:
     """
     Reusable dependency that fetches a product by ID.
     Ensures the product exists AND belongs to the authenticated user.
-    Raises 404 if not found or if it belongs to another user (security by design).
-    Used in GET one, PUT, and DELETE to avoid repeating this logic.
     """
     product = (
         db.query(Product)
@@ -40,11 +37,7 @@ def create_product(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Creates a new product for the authenticated user.
-    Name check is case-insensitive (func.lower) to prevent duplicates like
-    'Pepsi' and 'pepsi' being treated as different products.
-    """
+    """Creates a new product. Name check is case-insensitive to prevent duplicates."""
     existing_product = (
         db.query(Product)
         .filter(
@@ -61,30 +54,31 @@ def create_product(
         description=product.description,
         price=product.price,
         stock=product.stock,
-        owner_id=current_user.id,  # Links the product to the authenticated user
+        owner_id=current_user.id,
     )
-
     db.add(new_product)
     db.commit()
-    db.refresh(new_product)  # Fetches the auto-generated ID from the DB
-
+    db.refresh(new_product)
     return new_product
 
 
-@router.get("/", response_model=List[ProductResponse])
+@router.get("/", response_model=ProductListResponse)
 def get_products(
+    skip: int = 0,
+    limit: int = 20,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Returns all products belonging to the authenticated user."""
-    return db.query(Product).filter(Product.owner_id == current_user.id).all()
+    """Returns paginated products belonging to the authenticated user."""
+    query = db.query(Product).filter(Product.owner_id == current_user.id)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return {"total": total, "items": items}
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-def get_product(
-    product: Product = Depends(get_product_or_404),
-):
-    """Returns a single product by ID. Ownership is validated by the dependency."""
+def get_product(product: Product = Depends(get_product_or_404)):
+    """Returns a single product by ID."""
     return product
 
 
@@ -94,18 +88,12 @@ def update_product(
     db: Session = Depends(get_db),
     db_product: Product = Depends(get_product_or_404),
 ):
-    """
-    Partially updates a product. Only the fields sent in the request are modified.
-    exclude_unset=True prevents overwriting existing data with None for missing fields.
-    """
+    """Partially updates a product. Only sent fields are modified."""
     update_data = product_update.model_dump(exclude_unset=True)
-
     for key, value in update_data.items():
         setattr(db_product, key, value)
-
     db.commit()
     db.refresh(db_product)
-
     return db_product
 
 
@@ -114,12 +102,7 @@ def delete_product(
     db: Session = Depends(get_db),
     db_product: Product = Depends(get_product_or_404),
 ):
-    """
-    Deletes a product permanently.
-    Returns 204 No Content — the standard HTTP response for successful deletions.
-    The frontend handles the UI update locally without needing response data.
-    """
+    """Deletes a product permanently. Returns 204 No Content."""
     db.delete(db_product)
     db.commit()
-
     return Response(status_code=204)

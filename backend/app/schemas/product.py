@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 
 
@@ -9,12 +9,12 @@ class ProductCreate(BaseModel):
 
     name: str
     description: Optional[str] = None
-    price: Decimal  # Decimal for accurate money representation (avoids float rounding errors)
+    price: Decimal
     stock: Optional[int] = None
 
 
 class ProductUpdate(BaseModel):
-    """All fields optional — only provided fields will be updated (PATCH behavior)."""
+    """All fields optional — only provided fields will be updated."""
 
     name: Optional[str] = None
     description: Optional[str] = None
@@ -23,7 +23,7 @@ class ProductUpdate(BaseModel):
 
 
 class ProductResponse(BaseModel):
-    """Data returned to the client after create/read/update operations."""
+    """Data returned after create/read/update operations."""
 
     id: int
     name: str
@@ -36,3 +36,10 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ProductListResponse(BaseModel):
+    """Paginated response — wraps items with total count."""
+
+    total: int
+    items: List[ProductResponse]

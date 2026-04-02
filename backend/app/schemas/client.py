@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class ClientCreate(BaseModel):
@@ -35,3 +35,8 @@ class ClientResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ClientListResponse(BaseModel):
+    total: int
+    items: List[ClientResponse]

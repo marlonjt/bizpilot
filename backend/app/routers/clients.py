@@ -4,7 +4,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.client import Client
-from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse
+from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse, ClientListResponse
 from app.core.security import get_current_user
 from app.models.user import User
 
@@ -62,13 +62,17 @@ def create_client(
     return new_client
 
 
-@router.get("/", response_model=List[ClientResponse])
+@router.get("/", response_model=ClientListResponse)
 def get_clients(
+    skip: int = 0,
+    limit: int = 20,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Returns all clients belonging to the authenticated user."""
-    return db.query(Client).filter(Client.owner_id == current_user.id).all()
+    query = db.query(Client).filter(Client.owner_id == current_user.id)
+    total = query.count()  # total sin paginar
+    items = query.offset(skip).limit(limit).all()
+    return {"total": total, "items": items}
 
 
 @router.get("/{client_id}", response_model=ClientResponse)

@@ -4,23 +4,38 @@ import api from "../services/api";
 import ClientModal from "../components/ClientModal";
 import EditClientModal from "../components/EditClientModal";
 
+const PAGE_SIZE = 10; // records per page
+
 function Clients() {
   const [clients, setClients] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1); // current page (1-indexed)
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchClients = async () => {
+  // Fetches one page of clients based on current page number
+  const fetchClients = async (currentPage = page) => {
     try {
-      const response = await api.get("/clients/");
-      setClients(response.data);
+      const response = await api.get("/clients/", {
+        params: {
+          skip: (currentPage - 1) * PAGE_SIZE, // page 1 = skip 0, page 2 = skip 10
+          limit: PAGE_SIZE,
+        },
+      });
+      setClients(response.data.items);
+      setTotal(response.data.total);
     } catch (err) {
       console.error("Failed to fetch clients:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchClients();
+  }, [page]);
 
   const handleDelete = async (clientId) => {
     const confirmed = window.confirm(
@@ -32,12 +47,7 @@ function Clients() {
     }
   };
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
-
-  // Filter runs locally — no extra API calls
-  // Searches name, email and phone simultaneously, case-insensitive
+  // Client-side search on the current page only
   const filteredClients = clients.filter((client) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -46,6 +56,11 @@ function Clients() {
       (client.phone && client.phone.toLowerCase().includes(query))
     );
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const showingFrom = (page - 1) * PAGE_SIZE + 1;
+  const showingTo = Math.min(page * PAGE_SIZE, total);
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -76,7 +91,7 @@ function Clients() {
           <h2 className="text-white text-xl font-bold">
             Clients
             <span className="ml-2 text-sm font-normal text-gray-400">
-              {filteredClients.length} of {clients.length}
+              {total} total
             </span>
           </h2>
           <div className="flex gap-3 w-full sm:w-auto">
@@ -135,12 +150,54 @@ function Clients() {
               ))}
             </tbody>
           </table>
+
           {filteredClients.length === 0 && !loading && (
             <p className="text-gray-500 text-center py-10">
               {searchQuery
                 ? `No clients found for "${searchQuery}"`
                 : "No clients registered yet."}
             </p>
+          )}
+
+          {/* PAGINATION CONTROLS */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700">
+              <p className="text-gray-400 text-sm">
+                Showing {showingFrom}–{showingTo} of {total}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 rounded bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Prev
+                </button>
+                {/* Page number buttons */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`px-3 py-1 rounded text-sm transition-colors ${
+                        p === page
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 rounded bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
