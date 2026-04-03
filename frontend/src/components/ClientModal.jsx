@@ -31,7 +31,7 @@ function ClientModal({ onClose, onSuccess }) {
 
   return (
     // Overlay: dark background that covers the entire screen
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       {/* Modal Container */}
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
         {/* Header */}
@@ -58,7 +58,7 @@ function ClientModal({ onClose, onSuccess }) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. John Smith"
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             />
           </div>
 
@@ -73,7 +73,7 @@ function ClientModal({ onClose, onSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@example.com"
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             />
           </div>
 
@@ -87,7 +87,7 @@ function ClientModal({ onClose, onSuccess }) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 555 123 456"
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             />
           </div>
 
@@ -96,12 +96,11 @@ function ClientModal({ onClose, onSuccess }) {
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Notes
             </label>
-            <input
-              type="text"
+            <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes"
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none h-20"
+              placeholder="Add private notes about this client..."
             />
           </div>
 

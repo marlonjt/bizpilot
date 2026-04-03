@@ -1,123 +1,151 @@
 import { useState } from "react";
 import api from "../services/api";
 
+/**
+ * EditProductModal: Handles updating existing product details (price, stock, etc.)
+ * @param {Object} product - The current product data provided by the parent.
+ * @param {Function} onClose - Closes the modal without making changes.
+ * @param {Function} onSuccess - Refresh data and close after successful update.
+ */
 function EditProductModal({ product, onClose, onSuccess }) {
-  const [name, setName] = useState(product.name);
-  const [description, setDescription] = useState(product.description || "");
-  const [price, setPrice] = useState(product.price);
-  const [stock, setStock] = useState(product.stock);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  // --- FORM STATE (Pre-filled with product data) ---
+  const [productName, setProductName] = useState(product.name);
+  const [productDescription, setProductDescription] = useState(
+    product.description || "",
+  );
+  const [productPrice, setProductPrice] = useState(product.price);
+  const [productStock, setProductStock] = useState(product.stock);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSaving(true);
+  // --- UI FEEDBACK STATE ---
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
+
+  /**
+   * Sends the updated product data to the API.
+   * Converts strings to Numbers to match Backend requirements.
+   */
+  const handleUpdateSubmit = async (event) => {
+    event.preventDefault(); // Prevents page reload
+    setErrorMessage("");
+    setIsUpdateInProgress(true);
 
     try {
+      // Logic: Update specific record using its unique ID
       await api.put(`/products/${product.id}`, {
-        name,
-        description,
-        price: Number(price),
-        stock: Number(stock),
+        name: productName,
+        description: productDescription,
+        price: Number(productPrice), // Ensure numeric type for DB calculations
+        stock: Number(productStock), // Ensure numeric type for inventory
       });
-      onSuccess();
-    } catch {
-      setError("Failed to update product. Please try again.");
+
+      onSuccess(); // Triggers refresh in the main table
+    } catch (error) {
+      setErrorMessage("System Error: Could not save product changes.");
+      console.error("Product Update Error:", error);
     } finally {
-      setSaving(false);
+      setIsUpdateInProgress(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
+    // Overlay: Dimmed background to isolate the modal
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* Modal Container */}
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl animate-in fade-in zoom-in duration-200">
+        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-indigo-400 text-xl font-bold">Edit Product</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors text-xl"
+            className="text-gray-400 hover:text-white transition-colors"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Update Form */}
+        <form onSubmit={handleUpdateSubmit} className="space-y-4">
+          {/* Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Name
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Product Name
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
               required
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
+          {/* Numeric Fields: Price and Stock */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Price
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={productPrice}
+                onChange={(e) => setProductPrice(e.target.value)}
+                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Stock
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={productStock}
+                onChange={(e) => setProductStock(e.target.value)}
+                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Description Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               Description
             </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            <textarea
+              value={productDescription}
+              onChange={(e) => setProductDescription(e.target.value)}
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none h-20"
+              placeholder="Add notes about this product..."
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Price
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Stock
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={stock}
-              onChange={(e) => setStock(e.target.value)}
-              className="w-full rounded-md bg-gray-900/50 border border-gray-600 px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-500/10 p-3 border border-red-500/50">
-              <p className="text-sm text-red-400">{error}</p>
+          {/* Error Alert Display */}
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-md">
+              {errorMessage}
             </div>
           )}
 
+          {/* Footer Actions */}
           <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+              disabled={isUpdateInProgress}
+              className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              disabled={isUpdateInProgress}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {isUpdateInProgress ? "Updating..." : "Save Changes"}
             </button>
           </div>
         </form>
