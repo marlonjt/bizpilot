@@ -4,144 +4,155 @@ import api from "../services/api";
 import SaleModal from "../components/SaleModal";
 import EditSaleModal from "../components/EditSaleModal";
 import ConfirmModal from "../components/ConfirmModal";
-
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 10;
 
 function Sales() {
-  const [sales, setSales] = useState([]);
+  // --- DATA & PAGINATION STATE ---
+  const [salesList, setSalesList] = useState([]);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedSale, setSelectedSale] = useState(null);
+  const [totalSales, setTotalSales] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- SEARCH & UI STATE ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [saleToEdit, setSaleToEdit] = useState(null);
 
-  // Estados para el Modal de Confirmación
-  const [saleToDelete, setSaleToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // --- DELETE STATES ---
+  const [saleToDeleteId, setSaleToDeleteId] = useState(null);
+  const [isDeletingInProgress, setIsDeletingInProgress] = useState(false);
 
-  const fetchSales = async (currentPage = page) => {
-    setLoading(true);
+  /**
+   * Fetches sales from the server using pagination and database search.
+   */
+  const fetchSalesData = async (
+    pageNumber = currentPage,
+    search = searchQuery,
+  ) => {
+    setIsLoading(true);
     try {
       const response = await api.get("/sales/", {
-        params: { skip: (currentPage - 1) * PAGE_SIZE, limit: PAGE_SIZE },
+        params: {
+          skip: (pageNumber - 1) * PAGE_SIZE,
+          limit: PAGE_SIZE,
+          search: search, // Sent to FastAPI search parameter
+        },
       });
-      setSales(response.data.items || []);
-      setTotal(response.data.total || 0);
+      setSalesList(response.data.items || []);
+      setTotalSales(response.data.total || 0);
     } catch (error) {
-      console.error("Failed to fetch sales:", error);
+      console.error("Fetch Error:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  // Initial load for catalogs (Clients & Products).
+  // Needed to map IDs to Names in the table.
   useEffect(() => {
-    fetchSales();
-    // Cargamos catálogos (ajustado a estructura {items: []})
-    api.get("/clients/").then((r) => setClients(r.data.items || r.data));
-    api.get("/products/").then((r) => setProducts(r.data.items || r.data));
-  }, [page]);
+    api
+      .get("/clients/", { params: { limit: 1000 } })
+      .then((r) => setClients(r.data.items || []));
+    api
+      .get("/products/", { params: { limit: 1000 } })
+      .then((r) => setProducts(r.data.items || []));
+  }, []);
 
-  // --- ELIMINAR PRODUCTOS ---
-  const confirmDelete = async () => {
-    if (!saleToDelete) return;
-    setIsDeleting(true);
+  // SEARCH DEBOUNCE LOGIC Triggers fetchSalesData when searchQuery or currentPage changes.
+  useEffect(() => {
+    const searchTimer = setTimeout(() => {
+      fetchSalesData(currentPage, searchQuery);
+    }, 300);
 
-    try {
-      await api.delete(`/sales/${saleToDelete}`);
+    return () => clearTimeout(searchTimer);
+  }, [currentPage, searchQuery]);
 
-      setSaleToDelete(null);
-      fetchSales();
-    } catch (error) {
-      console.error("Error deleting sale", error);
-      setSaleToDelete(null);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // HELPERS: Manejan casos donde los datos aún no cargan
+  // --- HELPERS ---
   const getClientName = (clientId) => {
-    if (!clients.length) return "Loading...";
     const client = clients.find((c) => c.id === clientId);
-    return client ? client.full_name : "Unknown Client";
+    return client ? client.full_name : "Loading...";
   };
 
   const getProductName = (productId) => {
-    if (!products.length) return "Loading...";
     const product = products.find((p) => p.id === productId);
-    return product ? product.name : "Unknown Product";
+    return product ? product.name : "Loading...";
   };
 
-  const filteredSales = sales.filter((sale) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      getClientName(sale.client_id).toLowerCase().includes(query) ||
-      getProductName(sale.product_id).toLowerCase().includes(query)
-    );
-  });
+  // --- ACTIONS ---
+  const handleConfirmDelete = async () => {
+    if (!saleToDeleteId) return;
+    setIsDeletingInProgress(true);
+    try {
+      await api.delete(`/sales/${saleToDeleteId}`);
+      setSaleToDeleteId(null);
+      fetchSalesData();
+    } catch (error) {
+      console.error("Delete Error:", error);
+      setSaleToDeleteId(null);
+    } finally {
+      setIsDeletingInProgress(false);
+    }
+  };
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const showingTo = Math.min(page * PAGE_SIZE, total);
-
-  const exportToExcel = () => {
-    // Prepara los datos — solo los campos que quieres exportar
-    const data = sales.map((s) => ({
-      Cliente: getClientName(s.client_id),
-      Producto: getProductName(s.product_id),
+  const handleExportToExcel = () => {
+    const dataToExport = salesList.map((s) => ({
+      Client: getClientName(s.client_id),
+      Product: getProductName(s.product_id),
       UnitPrice: s.unit_price,
       Quantity: s.quantity,
       Total: s.total,
       Notes: s.notes || "",
     }));
 
-    // Crea la hoja y el libro
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
-
-    // Descarga el archivo
-    XLSX.writeFile(workbook, "sales.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales_Report");
+    XLSX.writeFile(workbook, "BizPilot_Sales.xlsx");
   };
+
+  // --- PAGINATION HELPERS ---
+  const maxPages = Math.ceil(totalSales / PAGE_SIZE);
+  const showingFrom = totalSales === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const showingTo = Math.min(currentPage * PAGE_SIZE, totalSales);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar />
 
-      {/* --- MODALES --- */}
-      {showCreateModal && (
+      {/* MODALS */}
+      {isCreateModalOpen && (
         <SaleModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => setIsCreateModalOpen(false)}
           onSuccess={() => {
-            setShowCreateModal(false);
-            fetchSales();
+            setIsCreateModalOpen(false);
+            fetchSalesData();
           }}
         />
       )}
-      {selectedSale && (
+      {saleToEdit && (
         <EditSaleModal
-          sale={selectedSale}
+          sale={saleToEdit}
           clients={clients}
           products={products}
-          onClose={() => setSelectedSale(null)}
+          onClose={() => setSaleToEdit(null)}
           onSuccess={() => {
-            setSelectedSale(null);
-            fetchSales();
+            setSaleToEdit(null);
+            fetchSalesData();
           }}
         />
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* HEADER & SEARCH */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-          <h2 className="text-white text-xl font-bold">
-            Sales
+          <h2 className="text-xl font-bold">
+            Sales Records
             <span className="ml-2 text-sm font-normal text-gray-400">
-              {total} total
+              ({totalSales} total)
             </span>
           </h2>
           <div className="flex gap-3 w-full sm:w-auto">
@@ -149,100 +160,108 @@ function Sales() {
               type="text"
               placeholder="Search by client, product or notes..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1); // Reset to first page on search
+              }}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-64"
             />
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => setIsCreateModalOpen(true)}
               className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm transition-colors"
             >
               + New Sale
             </button>
             <button
-              onClick={exportToExcel}
-              disabled={loading || sales.length === 0}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+              onClick={handleExportToExcel}
+              disabled={isLoading || salesList.length === 0}
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap"
             >
               ↓ Export Xlsx
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+        {/* SALES TABLE */}
+        <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-xl">
           <table className="w-full text-left">
-            <thead className="text-gray-400 border-b border-gray-700 text-sm uppercase">
+            <thead className="bg-gray-900/50 text-gray-400 border-b border-gray-700 text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4">Client</th>
                 <th className="px-6 py-4">Product</th>
                 <th className="px-6 py-4">Notes</th>
                 <th className="px-6 py-4">Qty</th>
                 <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Actions</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {filteredSales.map((sale) => (
+              {salesList.map((sale) => (
                 <tr
                   key={sale.id}
-                  className="text-gray-300 hover:bg-gray-700/50"
+                  className="text-gray-300 hover:bg-gray-700/50 transition-colors"
                 >
                   <td className="px-6 py-4">{getClientName(sale.client_id)}</td>
                   <td className="px-6 py-4">
                     {getProductName(sale.product_id)}
                   </td>
-                  <td className="px-6 py-4">{sale.notes || "—"}</td>
+                  <td className="px-6 py-4 text-sm italic text-gray-400">
+                    {sale.notes || "—"}
+                  </td>
                   <td className="px-6 py-4">{sale.quantity}</td>
                   <td className="px-6 py-4 text-green-400 font-medium">
                     ${Number(sale.total).toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 flex gap-3">
-                    <button
-                      onClick={() => setSelectedSale(sale)}
-                      className="text-indigo-400 hover:text-indigo-300 text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setSaleToDelete(sale.id)}
-                      className="text-red-400 hover:text-red-300 text-sm"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => setSaleToEdit(sale)}
+                        className="text-indigo-400 hover:text-indigo-300 text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setSaleToDeleteId(sale.id)}
+                        className="text-red-400 hover:text-red-300 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* --- PAGINACIÓN --- */}
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700 bg-gray-800/50">
-              <p className="text-gray-400 text-sm">
-                Showing {showingFrom}–{showingTo} of {total}
+          {/* EMPTY STATE */}
+          {salesList.length === 0 && !isLoading && (
+            <div className="p-20 text-center text-gray-500">
+              {searchQuery
+                ? `No matches found for "${searchQuery}"`
+                : "No sales recorded yet."}
+            </div>
+          )}
+
+          {/* PAGINATION */}
+          {maxPages > 1 && (
+            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700 bg-gray-900/10">
+              <p className="text-gray-400 text-xs">
+                Showing {showingFrom}–{showingTo} of {totalSales}
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1 rounded bg-gray-700 disabled:opacity-40"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1 rounded bg-gray-700 text-xs disabled:opacity-30 hover:bg-gray-600"
                 >
                   ← Prev
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`px-3 py-1 rounded ${p === page ? "bg-indigo-600 text-white" : "bg-gray-700"}`}
-                    >
-                      {p}
-                    </button>
-                  ),
-                )}
                 <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1 rounded bg-gray-700 disabled:opacity-40"
+                  disabled={currentPage === maxPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(maxPages, p + 1))
+                  }
+                  className="px-3 py-1 rounded bg-gray-700 text-xs disabled:opacity-30 hover:bg-gray-600"
                 >
                   Next →
                 </button>
@@ -251,12 +270,12 @@ function Sales() {
           )}
         </div>
       </div>
-      {/* --- MODAL DE CONFIRMACIÓN --- */}
+
       <ConfirmModal
-        isOpen={saleToDelete !== null}
-        onClose={() => setSaleToDelete(null)}
-        onConfirm={confirmDelete}
-        isDeleting={isDeleting}
+        isOpen={saleToDeleteId !== null}
+        onClose={() => setSaleToDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeletingInProgress}
         title="Delete Sale"
         message="Are you sure you want to delete this sale? This action cannot be undone."
       />

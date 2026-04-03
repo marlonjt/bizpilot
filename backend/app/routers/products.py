@@ -7,7 +7,12 @@ from app.database import get_db
 from app.core.security import get_current_user
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductListResponse
+from app.schemas.product import (
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse,
+    ProductListResponse,
+)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -66,11 +71,17 @@ def create_product(
 def get_products(
     skip: int = 0,
     limit: int = 20,
+    search: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Returns paginated products belonging to the authenticated user."""
     query = db.query(Product).filter(Product.owner_id == current_user.id)
+    # Search by name and description in the user interface
+    if search:
+        query = query.filter(
+            Product.name.ilike(f"%{search}%") | Product.description.ilike(f"%{search}%")
+        )
     total = query.count()
     items = query.offset(skip).limit(limit).all()
     return {"total": total, "items": items}

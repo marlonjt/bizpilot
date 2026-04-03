@@ -1,104 +1,127 @@
-import { useState } from "react"; // Añadido para el dropdown
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { User, LogOut, Settings, ChevronDown } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Settings,
+  ChevronDown,
+  LayoutDashboard,
+} from "lucide-react";
+
+// Navbar Component: Manages global navigation and user session state.
 
 function Navbar() {
+  // Global authentication data (Current user and logout action)
   const { user, logout } = useAuth();
+
+  // Navigation tools to move between routes and identify current location
   const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false); // Estado para abrir/cerrar el menú
 
-  const handleLogout = () => {
+  // Local state to toggle the user dropdown visibility
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Checks if the given path matches the current active route.
+  const checkActiveStatus = (path) => location.pathname === path;
+
+  // Logic to clear session and redirect user to login.
+  const handleUserLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const handleProfileClick = () => {
-    setIsOpen(false); // Cerramos el menú antes de navegar
+  // Closes menu and navigates to the profile editor.
+  const navigateToProfile = () => {
+    setIsDropdownOpen(false);
     navigate("/profile");
   };
 
   return (
-    <nav className="bg-gray-900 border-b border-gray-800">
+    // 'sticky top-0' keeps the navbar visible during scrolling. 'z-50' ensures it stays on top.
+    <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 text-white">
-          {/* Left: brand + navigation links */}
-          <div className="flex items-center gap-6">
+        <div className="flex justify-between items-center h-16">
+          {/* --- LEFT SECTION: BRAND & LINKS --- */}
+          <div className="flex items-center gap-8">
             <Link
               to="/dashboard"
-              className="font-bold text-lg hover:text-indigo-400 transition-colors"
+              className="flex items-center gap-2 font-bold text-xl text-white hover:text-indigo-400 transition-colors"
             >
-              BizPilot
+              <LayoutDashboard size={20} className="text-indigo-500" />
+              <span>BizPilot</span>
             </Link>
-            <Link
-              to="/clients"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
-              Clients
-            </Link>
-            <Link
-              to="/products"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
-              Products
-            </Link>
-            <Link
-              to="/sales"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
-              Sales
-            </Link>
+
+            {/* Navigation links with conditional logic for active styling */}
+            <div className="hidden md:flex items-center gap-5">
+              {["clients", "products", "sales"].map((item) => (
+                <Link
+                  key={item}
+                  to={`/${item}`}
+                  className={`text-sm font-medium transition-colors capitalize ${
+                    checkActiveStatus(`/${item}`)
+                      ? "text-indigo-400"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {item}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Right: User Section con Dropdown */}
+          {/* --- RIGHT SECTION: USER PROFILE --- */}
           <div className="relative">
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-3 hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors group"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-full transition-all group"
             >
-              {/* Icono de usuario circular */}
-              <div className="bg-gray-700 p-1.5 rounded-full group-hover:bg-indigo-600 transition-colors">
-                <User size={18} className="text-gray-200" />
+              <div className="bg-indigo-600 p-1.5 rounded-full text-white shadow-lg shadow-indigo-500/20">
+                <User size={16} />
               </div>
-
-              <span className="text-gray-300 text-sm font-medium capitalize">
-                {user?.full_name}
+              <span className="hidden sm:block text-gray-200 text-sm font-medium capitalize">
+                {user?.full_name?.split(" ")[0] || "User"}
               </span>
-
               <ChevronDown
-                size={16}
-                className={`text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                size={14}
+                className={`text-gray-500 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
               />
             </button>
 
-            {/* Menú Desplegable (Dropdown) */}
-            {isOpen && (
+            {/* --- DROPDOWN LOGIC --- */}
+            {isDropdownOpen && (
               <>
-                {/* Capa para cerrar al hacer clic fuera */}
+                {/* Overlay: Closes the dropdown when clicking the background */}
                 <div
                   className="fixed inset-0 z-10"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsDropdownOpen(false)}
                 ></div>
 
-                <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-20 py-1 overflow-hidden">
-                  {/* Opción Edit Profile */}
+                <div className="absolute right-0 mt-3 w-52 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-20 py-1.5 overflow-hidden animate-in fade-in zoom-in duration-150">
+                  {/* Account Info Header */}
+                  <div className="px-4 py-2 border-b border-gray-700 mb-1">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">
+                      Account
+                    </p>
+                    <p className="text-sm text-gray-200 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
 
                   <button
-                    onClick={handleProfileClick}
+                    onClick={navigateToProfile}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                   >
-                    <Settings size={16} />
+                    <Settings size={16} className="text-gray-400" />
                     Edit Profile
                   </button>
 
-                  {/* Opción Logout */}
                   <button
                     onClick={() => {
-                      setIsOpen(false);
-                      handleLogout();
+                      setIsDropdownOpen(false);
+                      handleUserLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20 transition-colors border-t border-gray-700"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-colors border-t border-gray-700"
                   >
                     <LogOut size={16} />
                     Sign out

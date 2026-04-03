@@ -3,57 +3,66 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function RegisterForm() {
+  // --- FORM STATE ---
+  // We use separate states for each input field to keep track of user typing
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
 
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  // --- UI STATE ---
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // --- TOOLS ---
+  const { register } = useAuth(); // Auth context to handle user creation
+  const navigate = useNavigate(); // Router tool to redirect after success
 
-    // Client-side validation before hitting the API
+  //Handles the registration process
+  const handleRegisterSubmit = async (event) => {
+    event.preventDefault(); // Prevents page refresh
+    setErrorMessage(""); // Clears previous errors
+
+    // Checking if passwords match before hitting the API
     if (password !== confirmPassword) {
-      return setError("Passwords do not match");
+      return setErrorMessage("Passwords do not match");
     }
 
     try {
       await register(fullName, email, password);
       navigate("/login");
-    } catch {
-      setError("Email already in use");
+    } catch (error) {
+      setErrorMessage("Email already in use");
     }
   };
 
   return (
     <div className="min-h-screen bg-black">
       <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+        {/* Header Section */}
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <div className="mx-auto w-fit">
             <span className="text-3xl font-black text-indigo-500">Biz</span>
             <span className="text-3xl font-black text-white">Pilot</span>
           </div>
-          <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
+          <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-white">
             Create your account
           </h2>
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400 text-sm">
-                {error}
+          <form onSubmit={handleRegisterSubmit} className="space-y-6">
+            {/* ERROR MESSAGE: Placed at the top with a single pulse animation */}
+            {errorMessage && (
+              <div className="rounded-md bg-red-500/10 p-4 border border-red-500/50 text-red-400 text-sm animate-[pulse_0.9s_ease-in-out_1]">
+                {errorMessage}
               </div>
             )}
 
+            {/* Input Groups: Consistent styling across the app */}
             <div>
               <label
                 htmlFor="fullName"
-                className="block text-sm/6 font-medium text-gray-100"
+                className="block text-sm font-medium text-gray-100"
               >
                 Full name
               </label>
@@ -61,10 +70,11 @@ function RegisterForm() {
                 <input
                   id="fullName"
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
                   required
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  value={fullName}
+                  placeholder="e.g. John Smith"
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -72,7 +82,7 @@ function RegisterForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm/6 font-medium text-gray-100"
+                className="block text-sm font-medium text-gray-100"
               >
                 Email address
               </label>
@@ -80,11 +90,12 @@ function RegisterForm() {
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -92,7 +103,8 @@ function RegisterForm() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm/6 font-medium text-gray-100"
+                border
+                className="block text-sm font-medium text-gray-100"
               >
                 Password
               </label>
@@ -100,10 +112,11 @@ function RegisterForm() {
                 <input
                   id="password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  value={password}
+                  placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -111,7 +124,7 @@ function RegisterForm() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm/6 font-medium text-gray-100"
+                className="block text-sm font-medium text-gray-100"
               >
                 Confirm password
               </label>
@@ -119,23 +132,25 @@ function RegisterForm() {
                 <input
                   id="confirmPassword"
                   type="password"
+                  required
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-white outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors focus:ring-2 focus:ring-indigo-500"
             >
               Create account
             </button>
           </form>
 
-          <p className="mt-10 text-center text-sm/6 text-gray-400">
+          {/* Footer Link */}
+          <p className="mt-10 text-center text-sm text-gray-400">
             Already have an account?{" "}
             <Link
               to="/login"

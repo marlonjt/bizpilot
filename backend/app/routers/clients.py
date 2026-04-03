@@ -4,7 +4,12 @@ from typing import List
 
 from app.database import get_db
 from app.models.client import Client
-from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse, ClientListResponse
+from app.schemas.client import (
+    ClientCreate,
+    ClientUpdate,
+    ClientResponse,
+    ClientListResponse,
+)
 from app.core.security import get_current_user
 from app.models.user import User
 
@@ -66,10 +71,18 @@ def create_client(
 def get_clients(
     skip: int = 0,
     limit: int = 20,
+    search: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     query = db.query(Client).filter(Client.owner_id == current_user.id)
+    if search:
+        query = query.filter(
+            Client.full_name.ilike(f"%{search}%")
+            | Client.email.ilike(f"%{search}%")
+            | Client.phone.ilike(f"%{search}%")
+            | Client.notes.ilike(f"%{search}%")
+        )
     total = query.count()  # total sin paginar
     items = query.offset(skip).limit(limit).all()
     return {"total": total, "items": items}

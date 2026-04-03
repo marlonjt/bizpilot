@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Path
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.database import get_db
 from app.core.security import get_current_user
@@ -84,11 +85,25 @@ def create_sale(
 def get_sales(
     skip: int = 0,
     limit: int = 20,
+    search: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Returns paginated sales belonging to the authenticated user."""
-    query = db.query(Sale).filter(Sale.owner_id == current_user.id)
+    query = (
+        db.query(Sale)
+        .outerjoin(Client)
+        .outerjoin(Product)
+        .filter(Sale.owner_id == current_user.id)
+    )
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Client.full_name.ilike(search_filter))
+            | (Product.name.ilike(search_filter))
+            | (func.coalesce(Sale.notes, "").ilike(search_filter))
+        )
     total = query.count()
     items = query.offset(skip).limit(limit).all()
     return {"total": total, "items": items}
