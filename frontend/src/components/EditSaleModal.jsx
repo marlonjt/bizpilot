@@ -48,7 +48,7 @@ function EditSaleModal({ sale, clients, products, onClose, onSuccess }) {
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-white text-xl font-bold">Edit Sale</h2>
+          <h2 className="text-indigo-400 text-xl font-bold">Edit Sale</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors text-xl"

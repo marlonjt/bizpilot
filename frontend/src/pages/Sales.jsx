@@ -3,6 +3,8 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 import SaleModal from "../components/SaleModal";
 import EditSaleModal from "../components/EditSaleModal";
+import ConfirmModal from "../components/ConfirmModal";
+
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 10;
@@ -17,6 +19,10 @@ function Sales() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Estados para el Modal de Confirmación
+  const [saleToDelete, setSaleToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchSales = async (currentPage = page) => {
     setLoading(true);
@@ -40,14 +46,21 @@ function Sales() {
     api.get("/products/").then((r) => setProducts(r.data.items || r.data));
   }, [page]);
 
-  const handleDelete = async (saleId) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this sale? Stock will be returned.",
-      )
-    ) {
-      await api.delete(`/sales/${saleId}`);
+  // --- ELIMINAR PRODUCTOS ---
+  const confirmDelete = async () => {
+    if (!saleToDelete) return;
+    setIsDeleting(true);
+
+    try {
+      await api.delete(`/sales/${saleToDelete}`);
+
+      setSaleToDelete(null);
       fetchSales();
+    } catch (error) {
+      console.error("Error deleting sale", error);
+      setSaleToDelete(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -100,6 +113,7 @@ function Sales() {
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar />
 
+      {/* --- MODALES --- */}
       {showCreateModal && (
         <SaleModal
           onClose={() => setShowCreateModal(false)}
@@ -189,7 +203,7 @@ function Sales() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(sale.id)}
+                      onClick={() => setSaleToDelete(sale.id)}
                       className="text-red-400 hover:text-red-300 text-sm"
                     >
                       Delete
@@ -200,6 +214,7 @@ function Sales() {
             </tbody>
           </table>
 
+          {/* --- PAGINACIÓN --- */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700 bg-gray-800/50">
               <p className="text-gray-400 text-sm">
@@ -236,6 +251,15 @@ function Sales() {
           )}
         </div>
       </div>
+      {/* --- MODAL DE CONFIRMACIÓN --- */}
+      <ConfirmModal
+        isOpen={saleToDelete !== null}
+        onClose={() => setSaleToDelete(null)}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+        title="Delete Sale"
+        message="Are you sure you want to delete this sale? This action cannot be undone."
+      />
     </div>
   );
 }

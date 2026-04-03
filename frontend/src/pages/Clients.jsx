@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 import ClientModal from "../components/ClientModal";
 import EditClientModal from "../components/EditClientModal";
+import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
 
 const PAGE_SIZE = 10;
@@ -16,32 +17,33 @@ function Clients() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // --- FUNCIONES HELPER (Lógica reutilizable) ---
+  // Estados para el Modal de Confirmación
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Obtener un cliente específico por nombre desde la API
-  const getClientByName = async (name) => {
-    try {
-      const res = await api.get("/clients/", { params: { search: name, limit: 1 } });
-      return res.data.items[0] || null;
-    } catch (err) {
-      console.error("Error finding client:", err);
-      return null;
-    }
-  };
+  // --- LÓGICA DE ELIMINACIÓN ---
+  const confirmDelete = async () => {
+    if (!clientToDelete) return;
+    setIsDeleting(true);
 
-  // Obtener un producto por nombre (útil para otras secciones)
-  const getProductByName = async (name) => {
     try {
-      const res = await api.get("/products/", { params: { search: name, limit: 1 } });
-      return res.data.items[0] || null;
-    } catch (err) {
-      console.error("Error finding product:", err);
-      return null;
+      // Nota: Si esto sigue dando 404, intenta cambiarlo a `clients/${clientToDelete}`
+      await api.delete(`/clients/${clientToDelete}`);
+
+      // Cerramos el modal
+      setClientToDelete(null);
+
+      // Actualizamos la tabla
+      fetchClients();
+
+    } catch (error) {
+      console.error("Error deleting client", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   // --- LÓGICA DE CARGA ---
-
   const fetchClients = async (currentPage = page, search = searchQuery) => {
     setLoading(true);
     try {
@@ -49,7 +51,7 @@ function Clients() {
         params: {
           skip: (currentPage - 1) * PAGE_SIZE,
           limit: PAGE_SIZE,
-          search: search // Enviamos la búsqueda al backend
+          search: search,
         },
       });
       setClients(response.data.items);
@@ -61,21 +63,13 @@ function Clients() {
     }
   };
 
-  // Efecto para buscar cuando cambia la página o la búsqueda (con delay opcional)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchClients(page, searchQuery);
-    }, 300); // 300ms de espera para no saturar el server mientras escribes
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [page, searchQuery]);
-
-  const handleDelete = async (clientId) => {
-    if (window.confirm("Are you sure you want to delete this client?")) {
-      await api.delete(`/clients/${clientId}`);
-      fetchClients();
-    }
-  };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -101,7 +95,10 @@ function Clients() {
       {showCreateModal && (
         <ClientModal
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => { setShowCreateModal(false); fetchClients(); }}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            fetchClients();
+          }}
         />
       )}
 
@@ -109,12 +106,14 @@ function Clients() {
         <EditClientModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          onSuccess={() => { setSelectedClient(null); fetchClients(); }}
+          onSuccess={() => {
+            setSelectedClient(null);
+            fetchClients();
+          }}
         />
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* HEADER SECTION */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-white text-xl font-bold">
             Clients
@@ -129,7 +128,7 @@ function Clients() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setPage(1); // Reiniciar a página 1 al buscar
+                setPage(1);
               }}
               className="w-full sm:w-64 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -148,7 +147,6 @@ function Clients() {
           </div>
         </div>
 
-        {/* TABLE SECTION */}
         <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
           <table className="w-full text-left">
             <thead className="text-gray-400 border-b border-gray-700 text-sm uppercase">
@@ -162,7 +160,10 @@ function Clients() {
             </thead>
             <tbody className="divide-y divide-gray-700">
               {clients.map((client) => (
-                <tr key={client.id} className="text-gray-300 hover:bg-gray-700/50">
+                <tr
+                  key={client.id}
+                  className="text-gray-300 hover:bg-gray-700/50"
+                >
                   <td className="px-6 py-4">{client.full_name}</td>
                   <td className="px-6 py-4">{client.email}</td>
                   <td className="px-6 py-4">{client.phone || "—"}</td>
@@ -176,7 +177,7 @@ function Clients() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(client.id)}
+                        onClick={() => setClientToDelete(client.id)}
                         className="text-red-400 hover:text-red-300 text-sm"
                       >
                         Delete
@@ -190,11 +191,12 @@ function Clients() {
 
           {clients.length === 0 && !loading && (
             <p className="text-gray-500 text-center py-10">
-              {searchQuery ? `No clients found for "${searchQuery}"` : "No clients registered yet."}
+              {searchQuery
+                ? `No clients found for "${searchQuery}"`
+                : "No clients registered yet."}
             </p>
           )}
 
-          {/* PAGINATION */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center px-6 py-4 border-t border-gray-700">
               <p className="text-gray-400 text-sm">
@@ -208,15 +210,17 @@ function Clients() {
                 >
                   ← Prev
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`px-3 py-1 rounded text-sm ${p === page ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300"}`}
-                  >
-                    {p}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`px-3 py-1 rounded text-sm ${p === page ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-300"}`}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
@@ -229,9 +233,17 @@ function Clients() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={clientToDelete !== null}
+        onClose={() => setClientToDelete(null)}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+        title="Delete Client"
+        message="Are you sure you want to delete this client? This action cannot be undone."
+      />
     </div>
   );
 }
 
 export default Clients;
-
