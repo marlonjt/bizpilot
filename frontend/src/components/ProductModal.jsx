@@ -1,11 +1,8 @@
 import { useState } from "react";
 import api from "../services/api";
 
-/**
- * ProductModal: Component to register new inventory items.
- * @param {Function} onClose - Function to hide the modal.
- * @param {Function} onSuccess - Function to refresh the product list.
- */
+// ProductModal: Component to register new inventory items.
+
 function ProductModal({ onClose, onSuccess }) {
   // --- FORM DATA STATE ---
   const [productName, setProductName] = useState("");
@@ -17,10 +14,9 @@ function ProductModal({ onClose, onSuccess }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSavingInProgress, setIsSavingInProgress] = useState(false);
 
-  /**
-   * Handles the submission of the product form.
-   * Converts numeric strings to actual Numbers before sending.
-   */
+  // Handles the submission of the product form.
+  // Converts numeric strings to actual Numbers before sending.
+
   const handleProductSubmit = async (event) => {
     event.preventDefault(); // Prevents page refresh
     setErrorMessage("");
@@ -115,11 +111,11 @@ function ProductModal({ onClose, onSuccess }) {
               Description
             </label>
             <textarea
-                value={productDescription}
-                onChange={(e) => setProductDescription(e.target.value)}
-                className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none h-20"
-                placeholder="Add notes about this product..."
-              />
+              value={productDescription}
+              onChange={(e) => setProductDescription(e.target.value)}
+              className="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none h-20"
+              placeholder="Add notes about this product..."
+            />
           </div>
 
           {/* Feedback Message */}

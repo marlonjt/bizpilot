@@ -1,103 +1,167 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext"; // Usamos tu contexto
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 
+//Profile: Component to manage the current user's account settings.
+//Handles name updates and password changes.
 function Profile() {
-  const { user, setUser } = useAuth(); // Para obtener y actualizar el nombre globalmente
-  const [formData, setFormData] = useState({
-    full_name: user?.full_name || "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const { user, setUser } = useAuth(); // Global auth context
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      return setMessage({ type: "error", text: "Passwords do not match" });
+  // --- FORM STATE ---
+  const [profileData, setProfileData] = useState({
+    fullName: user?.full_name || "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // --- UI FEEDBACK STATE ---
+  const [statusMessage, setStatusMessage] = useState({ type: "", text: "" });
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Validates and sends the profile updates to the API.
+  const handleProfileUpdate = async (event) => {
+    event.preventDefault();
+    setStatusMessage({ type: "", text: "" });
+
+    // Validation: Check if passwords match if a new one is provided
+    if (
+      profileData.newPassword &&
+      profileData.newPassword !== profileData.confirmPassword
+    ) {
+      return setStatusMessage({
+        type: "error",
+        text: "Passwords do not match.",
+      });
     }
 
+    setIsUpdating(true);
+
     try {
+      // API request to update profile details
       const response = await api.put("/auth/profile", {
-        full_name: formData.full_name,
-        password: formData.password || undefined,
+        full_name: profileData.fullName,
+        password: profileData.newPassword || undefined, // Only send if not empty
       });
 
-      setUser(response.data); // Actualiza el nombre en el Navbar inmediatamente
-      setMessage({ type: "success", text: "Profile updated successfully!" });
-    } catch (err) {
-      setMessage({ type: "error", text: "Failed to update profile" });
+      // Update the global user state so the Navbar reflects the change
+      setUser(response.data);
+      setStatusMessage({
+        type: "success",
+        text: "Profile updated successfully!",
+      });
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: "Error: Could not save changes.",
+      });
+      console.error("Profile Update Error:", error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-white font-sans">
       <Navbar />
-      <div className="max-w-md mx-auto mt-12 p-8 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-indigo-400 text-xl font-bold">Edit User</h2>
+
+      <main className="max-w-md mx-auto mt-16 p-8 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-indigo-400 text-2xl font-bold">
+              User Settings
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Update your personal information
+            </p>
+          </div>
           <button
             onClick={() => navigate("/dashboard")}
-            className="text-gray-400 hover:text-white transition-colors text-xl"
+            className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"
           >
             ✕
           </button>
         </div>
-        {message.text && (
+
+        {/* Feedback Alert */}
+        {statusMessage.text && (
           <div
-            className={`p-3 mb-4 rounded ${message.type === "error" ? "bg-red-900/50 text-red-200" : "bg-green-900/50 text-green-200"}`}
+            className={`p-4 mb-6 rounded-lg border ${
+              statusMessage.type === "error"
+                ? "bg-red-500/10 border-red-500/50 text-red-400"
+                : "bg-green-500/10 border-green-500/50 text-green-400"
+            } text-sm font-medium`}
           >
-            {message.text}
+            {statusMessage.text}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Profile Form */}
+        <form onSubmit={handleProfileUpdate} className="space-y-6">
+          {/* Full Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">
-              Full Name
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Display Name
             </label>
             <input
               type="text"
-              value={formData.full_name}
+              value={profileData.fullName}
               onChange={(e) =>
-                setFormData({ ...formData, full_name: e.target.value })
+                setProfileData({ ...profileData, fullName: e.target.value })
               }
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              placeholder="Your full name"
             />
           </div>
 
-          <div className="border-t border-gray-800 pt-5">
-            <p className="text-xs text-gray-500 mb-4 text-center">
-              Leave blank to keep current password
-            </p>
+          {/* Password Section */}
+          <div className="pt-4 border-t border-gray-800">
+            <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
+              Change Password
+            </h3>
             <div className="space-y-4">
               <input
                 type="password"
                 placeholder="New Password"
+                value={profileData.newPassword}
                 onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    newPassword: e.target.value,
+                  })
                 }
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
               />
               <input
                 type="password"
                 placeholder="Confirm New Password"
+                value={profileData.confirmPassword}
                 onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    confirmPassword: e.target.value,
+                  })
                 }
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
               />
+              <p className="text-[10px] text-gray-500 text-center italic">
+                * Leave fields blank if you don't want to change your password.
+              </p>
             </div>
           </div>
 
-          <button className="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20">
-            Save Changes
+          {/* Submit Button */}
+          <button
+            disabled={isUpdating}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 py-4 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUpdating ? "Saving Changes..." : "Apply Updates"}
           </button>
         </form>
-      </div>
+      </main>
     </div>
   );
 }

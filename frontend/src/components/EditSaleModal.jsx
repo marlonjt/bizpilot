@@ -1,10 +1,8 @@
 import { useState } from "react";
 import api from "../services/api";
 
-/**
- * EditSaleModal: Allows editing quantity and notes for an existing sale.
- * Note: Client and Product are read-only to maintain transaction integrity.
- */
+// EditSaleModal: Allows editing quantity and notes for an existing sale.
+// Note: Client and Product are read-only to maintain transaction integrity.
 function EditSaleModal({ sale, clients, products, onClose, onSuccess }) {
   // --- FORM STATE ---
   const [saleQuantity, setSaleQuantity] = useState(sale.quantity);
@@ -19,10 +17,8 @@ function EditSaleModal({ sale, clients, products, onClose, onSuccess }) {
     clients.find((c) => c.id === id)?.full_name || id;
   const getProductName = (id) => products.find((p) => p.id === id)?.name || id;
 
-  /**
-   * Handles the update request.
-   * Only quantity and notes are sent to the API.
-   */
+  //Handles the update request.
+  //Only quantity and notes are sent to the API.
   const handleUpdateSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");

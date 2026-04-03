@@ -1,12 +1,8 @@
 import { useState } from "react";
 import api from "../services/api";
 
-/**
- * EditProductModal: Handles updating existing product details (price, stock, etc.)
- * @param {Object} product - The current product data provided by the parent.
- * @param {Function} onClose - Closes the modal without making changes.
- * @param {Function} onSuccess - Refresh data and close after successful update.
- */
+// EditProductModal: Handles updating existing product details (price, stock, etc.)
+
 function EditProductModal({ product, onClose, onSuccess }) {
   // --- FORM STATE (Pre-filled with product data) ---
   const [productName, setProductName] = useState(product.name);
@@ -20,10 +16,8 @@ function EditProductModal({ product, onClose, onSuccess }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
 
-  /**
-   * Sends the updated product data to the API.
-   * Converts strings to Numbers to match Backend requirements.
-   */
+  // Sends the updated product data to the API.
+  // Converts strings to Numbers to match Backend requirements.
   const handleUpdateSubmit = async (event) => {
     event.preventDefault(); // Prevents page reload
     setErrorMessage("");

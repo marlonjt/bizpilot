@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 
-/**
- * SaleModal: Handles the creation of new sales records.
- * Fetches clients and products to populate dropdown menus.
- */
+// SaleModal: Handles the creation of new sales records.
+// Fetches clients and products to populate dropdown menus.
+
 function SaleModal({ onClose, onSuccess }) {
   // --- FORM DATA STATE ---
   const [selectedClientId, setSelectedClientId] = useState("");
@@ -20,10 +19,9 @@ function SaleModal({ onClose, onSuccess }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSavingInProgress, setIsSavingInProgress] = useState(false);
 
-  /**
-   * Initial Load: Fetch clients and products from the API.
-   * Uses a high limit to ensure all items are available for selection.
-   */
+  // Initial Load: Fetch clients and products from the API.
+  // Uses a high limit to ensure all items are available for selection.
+
   useEffect(() => {
     // Fetch Clients
     api
@@ -38,10 +36,9 @@ function SaleModal({ onClose, onSuccess }) {
       .catch((err) => console.error("Error loading products:", err));
   }, []);
 
-  /**
-   * Handles the submission of a new sale.
-   * Ensures IDs and quantities are sent as numeric values.
-   */
+  // Handles the submission of a new sale.
+  // Ensures IDs and quantities are sent as numeric values.
+
   const handleSaleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage("");

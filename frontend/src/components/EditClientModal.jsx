@@ -1,12 +1,8 @@
 import { useState } from "react";
 import api from "../services/api";
 
-/**
- * EditClientModal: Component to update existing client information.
- * @param {Object} client - The current client data to be edited.
- * @param {Function} onClose - Closes the modal without saving.
- * @param {Function} onSuccess - Refresh data and close on success.
- */
+// EditClientModal: Component to update existing client information.
+
 function EditClientModal({ client, onClose, onSuccess }) {
   // --- FORM STATE (Pre-filled with existing client data) ---
   const [fullName, setFullName] = useState(client.full_name);
@@ -18,16 +14,14 @@ function EditClientModal({ client, onClose, onSuccess }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isUpdateInProgress, setIsUpdateInProgress] = useState(false);
 
-  /**
-   * Sends the updated information to the Backend using the client ID.
-   */
+  // Sends the updated information to the Backend using the client ID.
   const handleUpdateSubmit = async (event) => {
     event.preventDefault(); // Prevents standard browser form submission
     setErrorMessage("");
     setIsUpdateInProgress(true);
 
     try {
-      // Logic: Update specifically the record matching client.id
+      // Update specifically the record matching client.id
       await api.put(`/clients/${client.id}`, {
         full_name: fullName,
         email: email,

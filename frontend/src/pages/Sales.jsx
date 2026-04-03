@@ -213,16 +213,16 @@ function Sales() {
                     ${Number(sale.total).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-4">
                       <button
                         onClick={() => setSaleToEdit(sale)}
-                        className="text-indigo-400 hover:text-indigo-300 text-sm"
+                        className="text-indigo-400 hover:text-indigo-200"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setSaleToDeleteId(sale.id)}
-                        className="text-red-400 hover:text-red-300 text-sm"
+                        className="text-red-400 hover:text-red-300"
                       >
                         Delete
                       </button>

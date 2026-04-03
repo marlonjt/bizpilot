@@ -189,16 +189,16 @@ function Products() {
                     {product.stock} {product.stock < 5 ? "left" : ""}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-4">
                       <button
                         onClick={() => setProductToEdit(product)}
-                        className="text-indigo-400 hover:text-indigo-300 text-sm"
+                        className="text-indigo-400 hover:text-indigo-200"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setProductIdToDelete(product.id)}
-                        className="text-red-400 hover:text-red-300 text-sm"
+                        className="text-red-400 hover:text-red-300"
                       >
                         Delete
                       </button>
