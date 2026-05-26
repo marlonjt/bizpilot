@@ -21,6 +21,7 @@ function Clients() {
   const [clientToDeleteId, setClientToDeleteId] = useState(null);
   const [isDeleteInProgress, setIsDeleteInProgress] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Fetches the client list from the API with pagination and search
   const fetchClientsData = async (
@@ -86,6 +87,37 @@ function Clients() {
     XLSX.writeFile(workbook, "bizpilot_clients.xlsx");
   };
 
+  const handleExportAllToExcel = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/clients/", {
+        params: {
+          skip: 0,
+          limit: 99999,
+          search: searchQuery,
+        },
+      });
+
+      const allClients = response.data.items || [];
+      const formattedData = allClients.map((client) => ({
+        Name: client.full_name,
+        Email: client.email,
+        Phone: client.phone || "N/A",
+        Notes: client.notes || "",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "ClientsReport");
+      XLSX.writeFile(workbook, `bizpilot_clients_all_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error("Export Error:", error);
+      alert("Error exporting data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- PAGINATION HELPERS ---
   const maxPages = Math.ceil(totalRecords / PAGE_SIZE);
   const showingFrom =
@@ -146,12 +178,37 @@ function Clients() {
             >
               + Add Client
             </button>
-            <button
-              onClick={handleExportToExcel}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-            >
-              Export Excel
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isLoading || totalRecords === 0}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                Export Excel
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-10">
+                  <button
+                    onClick={() => {
+                      handleExportToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300"
+                  >
+                    Export This Page ({clientsList.length} items)
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleExportAllToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300 border-t border-gray-700"
+                  >
+                    Export All ({totalRecords} items)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

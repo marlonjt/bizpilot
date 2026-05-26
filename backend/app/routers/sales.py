@@ -9,6 +9,7 @@ from app.models.user import User
 from app.models.product import Product
 from app.models.client import Client
 from app.schemas.sale import SaleCreate, SaleUpdate, SaleResponse, SaleListResponse
+from app.utils import validate_pagination
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -57,7 +58,17 @@ def create_sale(
     current_user: User = Depends(get_current_user),
 ):
     client = fetch_client(sale.client_id, current_user.id, db)
-    product = fetch_product(sale.product_id, current_user.id, db)
+    
+    # Pessimistic lock: SELECT FOR UPDATE prevents race conditions
+    # Ensures no other transaction can modify this product until we commit
+    product = (
+        db.query(Product)
+        .filter(Product.id == sale.product_id, Product.owner_id == current_user.id)
+        .with_for_update()
+        .first()
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
 
     if product.stock < sale.quantity:
         raise HTTPException(status_code=400, detail="Insufficient stock")
@@ -90,6 +101,8 @@ def get_sales(
     current_user: User = Depends(get_current_user),
 ):
     """Returns paginated sales belonging to the authenticated user."""
+    skip, limit = validate_pagination(skip, limit)
+    
     query = (
         db.query(Sale)
         .outerjoin(Client)
@@ -125,7 +138,16 @@ def update_sale(
     if "quantity" in update_data:
         new_quantity = update_data["quantity"]
         difference = new_quantity - db_sale.quantity
-        product = fetch_product(db_sale.product_id, db_sale.owner_id, db)
+        
+        # Pessimistic lock: SELECT FOR UPDATE prevents race conditions
+        product = (
+            db.query(Product)
+            .filter(Product.id == db_sale.product_id, Product.owner_id == db_sale.owner_id)
+            .with_for_update()
+            .first()
+        )
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
 
         if product.stock < difference:
             raise HTTPException(status_code=400, detail="Insufficient stock")
@@ -147,7 +169,16 @@ def delete_sale(
     db: Session = Depends(get_db),
     db_sale: Sale = Depends(get_sale_or_404),
 ):
-    product = fetch_product(db_sale.product_id, db_sale.owner_id, db)
+    # Pessimistic lock for consistency
+    product = (
+        db.query(Product)
+        .filter(Product.id == db_sale.product_id, Product.owner_id == db_sale.owner_id)
+        .with_for_update()
+        .first()
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
     product.stock += db_sale.quantity
     db.delete(db_sale)
     db.commit()

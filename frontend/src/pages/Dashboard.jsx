@@ -15,15 +15,16 @@ function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         // Fetching all core data simultaneously for performance
+        // Increased limit to 1000 to ensure all data is loaded for accurate dashboard metrics
         const [clientsRes, productsRes, salesRes] = await Promise.all([
-          api.get("/clients/", { params: { skip: 0, limit: 100 } }),
-          api.get("/products/", { params: { skip: 0, limit: 100 } }),
-          api.get("/sales/", { params: { skip: 0, limit: 100 } }),
+          api.get("/clients/", { params: { skip: 0, limit: 1000 } }),
+          api.get("/products/", { params: { skip: 0, limit: 1000 } }),
+          api.get("/sales/", { params: { skip: 0, limit: 1000 } }),
         ]);
 
-        setClients(clientsRes.data.items);
-        setProducts(productsRes.data.items);
-        setSales(salesRes.data.items);
+        setClients(clientsRes.data?.items ?? []);
+        setProducts(productsRes.data?.items ?? []);
+        setSales(salesRes.data?.items ?? []);
       } catch (error) {
         console.error("Dashboard Sync Error:", error);
       } finally {

@@ -6,6 +6,7 @@ from typing import List
 from app.database import get_db
 from app.core.security import get_current_user
 from app.models.product import Product
+from app.models.sale import Sale
 from app.models.user import User
 from app.schemas.product import (
     ProductCreate,
@@ -13,6 +14,7 @@ from app.schemas.product import (
     ProductResponse,
     ProductListResponse,
 )
+from app.utils import validate_pagination
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -76,6 +78,8 @@ def get_products(
     current_user: User = Depends(get_current_user),
 ):
     """Returns paginated products belonging to the authenticated user."""
+    skip, limit = validate_pagination(skip, limit)
+    
     query = db.query(Product).filter(Product.owner_id == current_user.id)
     # Search by name and description in the user interface
     if search:
@@ -113,7 +117,18 @@ def delete_product(
     db: Session = Depends(get_db),
     db_product: Product = Depends(get_product_or_404),
 ):
-    """Deletes a product permanently. Returns 204 No Content."""
+    """
+    Deletes a product permanently. Returns 204 No Content.
+    Prevents deletion if product has linked sales.
+    """
+    # Check if product has any sales
+    sale_count = db.query(Sale).filter(Sale.product_id == db_product.id).count()
+    if sale_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete product with {sale_count} associated sale(s). Delete or modify the sales first."
+        )
+    
     db.delete(db_product)
     db.commit()
     return Response(status_code=204)
