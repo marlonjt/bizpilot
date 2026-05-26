@@ -21,6 +21,7 @@ function Sales() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [saleToEdit, setSaleToEdit] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // --- DELETE STATES ---
   const [saleToDeleteId, setSaleToDeleteId] = useState(null);
@@ -114,6 +115,39 @@ function Sales() {
     XLSX.writeFile(workbook, "BizPilot_Sales.xlsx");
   };
 
+  const handleExportAllToExcel = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/sales/", {
+        params: {
+          skip: 0,
+          limit: 99999, // Fetch all records
+          search: searchQuery,
+        },
+      });
+
+      const allSales = response.data.items || [];
+      const dataToExport = allSales.map((s) => ({
+        Client: getClientName(s.client_id),
+        Product: getProductName(s.product_id),
+        UnitPrice: s.unit_price,
+        Quantity: s.quantity,
+        Total: s.total,
+        Notes: s.notes || "",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales_Report");
+      XLSX.writeFile(workbook, `BizPilot_Sales_All_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error("Export Error:", error);
+      alert("Error exporting data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- PAGINATION HELPERS ---
   const maxPages = Math.ceil(totalSales / PAGE_SIZE);
   const showingFrom = totalSales === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -172,13 +206,37 @@ function Sales() {
             >
               + New Sale
             </button>
-            <button
-              onClick={handleExportToExcel}
-              disabled={isLoading || salesList.length === 0}
-              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap"
-            >
-              ↓ Export Xlsx
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isLoading || totalSales === 0}
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap"
+              >
+                ↓ Export Xlsx
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-10">
+                  <button
+                    onClick={() => {
+                      handleExportToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300"
+                  >
+                    Export This Page ({salesList.length} items)
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleExportAllToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300 border-t border-gray-700"
+                  >
+                    Export All ({totalSales} items)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
