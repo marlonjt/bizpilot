@@ -184,7 +184,7 @@ function Products() {
                 disabled={isLoading || totalProducts === 0}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
               >
-                Export
+                ↓ Export Xlsx
               </button>
               {showExportMenu && (
                 <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-10">
