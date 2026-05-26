@@ -111,7 +111,9 @@ def update_profile(
         current_user.full_name = user_data.full_name
 
     # Si envió una contraseña, la hash antes de guardarla
-    if user_data.password and len(user_data.password) >= 6:
+    if user_data.password:
+        if len(user_data.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
         current_user.hashed_password = hash_password(user_data.password)
 
     db.add(current_user)

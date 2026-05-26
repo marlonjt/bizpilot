@@ -12,6 +12,7 @@ from app.schemas.client import (
 )
 from app.core.security import get_current_user
 from app.models.user import User
+from app.utils import validate_pagination
 
 # All routes in this router will be prefixed with /clients
 router = APIRouter(prefix="/clients", tags=["clients"])
@@ -75,6 +76,8 @@ def get_clients(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    skip, limit = validate_pagination(skip, limit)
+    
     query = db.query(Client).filter(Client.owner_id == current_user.id)
     if search:
         query = query.filter(

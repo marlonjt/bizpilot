@@ -19,6 +19,7 @@ function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // --- DELETE STATES ---
   const [productIdToDelete, setProductIdToDelete] = useState(null);
@@ -88,6 +89,36 @@ function Products() {
     XLSX.writeFile(workbook, "BizPilot_Inventory.xlsx");
   };
 
+  const handleExportAllToExcel = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/products/", {
+        params: {
+          skip: 0,
+          limit: 99999,
+          search: searchQuery,
+        },
+      });
+
+      const allProducts = response.data.items || [];
+      const dataToExport = allProducts.map((p) => ({
+        Name: p.name,
+        Price: p.price,
+        Stock: p.stock,
+        Description: p.description || "",
+      }));
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+      XLSX.writeFile(workbook, `BizPilot_Inventory_All_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error("Export Error:", error);
+      alert("Error exporting data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- PAGINATION HELPERS ---
   const maxPages = Math.ceil(totalProducts / PAGE_SIZE);
   const showingFrom =
@@ -147,12 +178,37 @@ function Products() {
             >
               + Add Product
             </button>
-            <button
-              onClick={handleExportToExcel}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isLoading || totalProducts === 0}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                Export
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-10">
+                  <button
+                    onClick={() => {
+                      handleExportToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300"
+                  >
+                    Export This Page ({productList.length} items)
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleExportAllToExcel();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-800 text-sm text-gray-300 border-t border-gray-700"
+                  >
+                    Export All ({totalProducts} items)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
